@@ -1,0 +1,13 @@
+namespaces:
+- author:
+  - Carl Harris
+  contact:
+  - carlwharris1@gmail.com
+  doc: holographic photostimulation extension to NWB standard
+  name: ndx-photostim
+  schema:
+  - namespace: core
+    neurodata_types:
+    - ElectricalSeries
+  - source: ndx-photostim.extensions.yaml
+  version: 0.1.0
