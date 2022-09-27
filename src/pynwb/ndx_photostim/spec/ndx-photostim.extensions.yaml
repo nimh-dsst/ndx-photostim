@@ -8,12 +8,3 @@ groups:
     shape:
     - 2
     doc: vertices for surface, points in 3D space
-- neurodata_type_def: PhotostimulationDevice
-  neurodata_type_inc: NWBContainer
-  doc: photostimDevice
-  attributes:
-  - name: slm
-    dtype:
-      target_type: GroupSpec
-      reftype: object
-    doc: slm

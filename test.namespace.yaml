@@ -1,0 +1,9 @@
+namespaces:
+- doc: Test extension
+  name: test
+  schema:
+  - namespace: core
+    neurodata_types:
+    - NWBContainer
+  - source: test.extensions.yaml
+  version: 0.1.0
