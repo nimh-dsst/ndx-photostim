@@ -9,5 +9,7 @@ namespaces:
   - namespace: core
     neurodata_types:
     - NWBContainer
+    - Device
+    - NWBDataInterface
   - source: ndx-photostim.extensions.yaml
   version: 0.1.0

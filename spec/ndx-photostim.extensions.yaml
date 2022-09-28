@@ -1,19 +1,55 @@
 groups:
 - neurodata_type_def: SpatialLightModulator
   neurodata_type_inc: NWBContainer
-  doc: slm
+  doc: Spatial light modulator used in holographic photostimulation
   attributes:
-  - name: size
-    dtype: float
+  - name: dimensions
+    dtype: numeric
     shape:
-    - 2
-    doc: vertices for surface, points in 3D space
+    - - 2
+    - - 3
+    doc: dimensions ([w, h] or [w, h, d]) of SLM field
 - neurodata_type_def: PhotostimulationDevice
-  neurodata_type_inc: NWBContainer
+  neurodata_type_inc: Device
   doc: photostimDevice
   attributes:
+  - name: type
+    dtype: text
+    doc: type of stimulation (laser or LED)
+  - name: wavelength
+    dtype: numeric
+    doc: wavelength of photostimulation
   - name: slm
     dtype:
       target_type: GroupSpec
       reftype: object
-    doc: slm
+    doc: spatial light modulator device
+- neurodata_type_def: Photostimulation
+  neurodata_type_inc: NWBDataInterface
+  doc: photostimulation container
+  attributes:
+  - name: device
+    dtype:
+      target_type: GroupSpec
+      reftype: object
+    doc: photostimulation device
+  - name: roi_coordinates
+    dtype: numeric
+    shape:
+    - - null
+      - 2
+    - - null
+      - 3
+    doc: '[n,2] or [n,3] list of coordinates'
+  - name: stimulation_diameter
+    dtype: numeric
+    doc: diameter of stimulation (pixels)
+  - name: roi_mask
+    dtype: numeric
+    doc: mask of region of interest
+  - name: opsin
+    dtype: text
+    doc: opsin used
+  - name: peak_pulse_power
+    dtype: numeric
+    doc: peak pulse power (J)
