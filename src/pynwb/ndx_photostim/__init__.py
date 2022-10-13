@@ -5,7 +5,10 @@ from pynwb import register_class, load_namespaces
 from collections.abc import Iterable
 from pynwb.core import NWBContainer, NWBDataInterface
 from pynwb.device import Device
-from hdmf.utils import docval, popargs, get_docval, get_data_shape, popargs_to_dict
+from hdmf.utils import docval, popargs, get_docval, get_data_shape #popargs_to_dict
+
+def popargs_to_dict(keys_to_set, kwargs):
+    return [kwargs.pop(key) for key in keys_to_set]
 
 
 # Set path of the namespace.yaml file to the expected install location

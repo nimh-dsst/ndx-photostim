@@ -16,24 +16,43 @@ groups:
   - name: type
     dtype: text
     doc: type of stimulation (laser or LED)
+    required: false
   - name: wavelength
     dtype: numeric
     doc: wavelength of photostimulation
+    required: false
   - name: slm
     dtype:
       target_type: GroupSpec
       reftype: object
     doc: spatial light modulator device
-- neurodata_type_def: Photostimulation
-  neurodata_type_inc: NWBDataInterface
-  doc: photostimulation container
+    required: false
+- neurodata_type_def: ImagingPlane
+  neurodata_type_inc: NWBContainer
+  doc: Photostimulation container
   attributes:
   - name: device
     dtype:
       target_type: GroupSpec
       reftype: object
     doc: photostimulation device
-  - name: roi_coordinates
+  - name: opsin
+    dtype: text
+    doc: opsin used
+  - name: peak_pulse_power
+    dtype: numeric
+    doc: peak pulse power (J)
+  - name: power
+    dtype: numeric
+    doc: power (in milliwatts)
+  - name: pulse_rate
+    dtype: numeric
+    doc: pulse rate (Hz)
+- neurodata_type_def: HolographicPattern
+  neurodata_type_inc: NWBContainer
+  doc: holographic pattern
+  attributes:
+  - name: pixel_roi
     dtype: numeric
     shape:
     - - null
@@ -41,15 +60,27 @@ groups:
     - - null
       - 3
     doc: '[n,2] or [n,3] list of coordinates'
+  - name: mask_roi
+    dtype: numeric
+    doc: mask of region of interest
   - name: stimulation_diameter
     dtype: numeric
     doc: diameter of stimulation (pixels)
-  - name: roi_mask
+  - name: dimension
     dtype: numeric
-    doc: mask of region of interest
-  - name: opsin
-    dtype: text
-    doc: opsin used
-  - name: peak_pulse_power
+    shape:
+    - - 2
+    - - 3
+    doc: dimension
+- neurodata_type_def: PhotostimulationSeries
+  neurodata_type_inc: TimeSeries
+  doc: PhotostimulationSeries container
+  attributes:
+  - name: pattern
+    dtype:
+      target_type: GroupSpec
+      reftype: object
+    doc: photostimulation pattern
+  - name: field_of_view
     dtype: numeric
-    doc: peak pulse power (J)
+    doc: fov
