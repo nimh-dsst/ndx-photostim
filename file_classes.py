@@ -18,11 +18,11 @@ class SpatialLightModulator(NWBContainer):
     Spatial light modulator class.
     """
 
-    __nwbfields__ = ('dimensions',)
+    __nwbfields__ = ('name', 'dimensions')
 
     @docval(
         {'name': 'name', 'type': str, 'doc': 'name of spatial light modulator'},
-        {'name': 'dimensions', 'type': Iterable, 'doc': 'dimensions ([w, h] or [w, h, d]) of SLM field'}
+        {'name': 'dimensions', 'type': Iterable, 'doc': 'dimensions ([w, h] or [w, h, d]) of SLM field', 'shape': ((2,), (3,))}
     )
     def __init__(self, **kwargs):
         dimensions = popargs('dimensions', kwargs)
@@ -39,13 +39,11 @@ class PhotostimulationDevice(Device):
 
     @docval(*get_docval(Device.__init__) + (
         {'name': 'type', 'type': str, 'doc': 'type of stimulation (laser or LED)', 'default': None},
-        {'name': 'wavelength', 'type': float, 'doc': 'wavelength of photostimulation', 'default': None},
+        {'name': 'wavelength', 'type': (int, float), 'doc': 'wavelength of photostimulation', 'default': None},
         {'name': 'slm', 'type': SpatialLightModulator, 'doc': 'spatial light modulator', 'default': None}
     ))
     def __init__(self, **kwargs):
-        keys_to_set = ("type",
-                       "wavelength",
-                       "slm")
+        keys_to_set = ("type", "wavelength", "slm")
         args_to_set = popargs_to_dict(keys_to_set, kwargs)
         super().__init__(**kwargs)
 
@@ -99,28 +97,13 @@ class HolographicPattern(NWBContainer):
             setattr(self, key, val)
 
         if self.pixel_roi is not None and self.stimulation_diameter is None:
-            raise TypeError("'pixel_roi' & 'stimulation_diameter' OR 'roi_mask' must be specified")
+            raise TypeError("'pixel_roi' & 'stimulation_diameter' OR 'mask_roi' must be specified")
 
         if self.pixel_roi is not None and self.dimension is None:
-            raise ValueError("If providing 'image_mask', must supply 'dimension' when defining 'HolographicPattern'")
+            raise ValueError("if providing 'image_mask', must supply 'dimension' when defining 'HolographicPattern'")
 
         if self.dimension is None and self.mask_roi is not None:
             self.dimension = np.array(self.mask_roi).shape
-
-    def pixel_to_image(self, pixel_mask):
-        """Converts a 2D pixel_mask of a ROI into an image_mask."""
-        image_matrix = np.zeros(self.dimension)
-        npmask = np.asarray(pixel_mask)
-
-        x_coords = npmask[:, 0].astype(np.int32)
-        y_coords = npmask[:, 1].astype(np.int32)
-        if len(self.dimension) == 2:
-            image_matrix[y_coords, x_coords] = 1
-        else:
-            z_coords = npmask[:, 2].astype(np.int32)
-            image_matrix[y_coords, x_coords, z_coords] = 1
-
-        return image_matrix
 
     @staticmethod
     def image_to_pixel(image_mask):
@@ -136,48 +119,55 @@ class HolographicPattern(NWBContainer):
             it.iternext()
         return pixel_mask
 
-    @docval({'name': 'description', 'type': str, 'doc': 'a brief description of what the region is'},
-            {'name': 'region', 'type': (slice, list, tuple), 'doc': 'the indices of the table', 'default': slice(None)},
-            {'name': 'name', 'type': str, 'doc': 'the name of the ROITableRegion', 'default': 'rois'})
-    def create_roi_table_region(self, **kwargs):
-        return self.create_region(**kwargs)
-
 @register_class('PhotostimulationSeries', 'test')
 class PhotostimulationSeries(TimeSeries):
 
     __nwbfields__ = ('pattern', 'field_of_view')
 
     @docval({'name': 'name', 'type': str, 'doc': 'name'},
+            {'name': 'imaging_plane', 'type': ImagingPlane, 'doc': 'imaging_plane'},
+            {'name': 'pattern', 'type': HolographicPattern, 'doc': 'photostimulation pattern'},
+            {'name': 'format', 'type': str, 'doc': 'name', 'default': 'interval'},
              {'name': 'data', 'type': ('array_data', 'data'), 'doc': 'name', 'default': None},
-             {'name': 'format', 'type': str, 'doc': 'name', 'default': 'interval'},
              {'name': 'stimulus_duration', 'type': (int, float), 'doc': 'name', 'default': None},
-             {'name': 'pattern', 'type': HolographicPattern, 'doc': 'photostimulation pattern'},
              {'name': 'field_of_view', 'type': (int, float), 'doc': 'diameter of stimulation (pixels)', 'default': None},
              {'name': 'timestamps', 'type': ('array_data', 'data'), 'doc': 'name', 'default': None},
-            *get_docval(TimeSeries.__init__, 'unit', 'resolution', 'conversion', 'offset', 'starting_time',
+            *get_docval(TimeSeries.__init__, 'unit', 'resolution', 'conversion',  'starting_time',
                   'rate', 'comments', 'description', 'control', 'control_description', 'continuity')
     )
     def __init__(self, **kwargs):
-        keys_to_set = ("pattern", "field_of_view", "format", "stimulus_duration")
+        keys_to_set = ("pattern", "field_of_view", "format", "stimulus_duration", "imaging_plane")
         args_to_set = popargs_to_dict(keys_to_set, kwargs)
 
+        args_to_set['format'] = args_to_set['format'].lower()
         if args_to_set['format'] not in ['interval', 'series']:
             raise ValueError("'format' must be one of 'interval' or 'series'")
 
-        if args_to_set['format'] == 'series' and kwargs['data'] is None:
-            raise ValueError("if 'format' is 'series', 'data' must be specified")
+        if kwargs['data'] is not None:
+            if not isinstance(kwargs['data'], list) and not isinstance(kwargs['data'], np.ndarray):
+                raise ValueError("'data' needs to be a list or numpy array")
+
+            if isinstance(kwargs['data'], np.ndarray):
+                kwargs['data'] = list(kwargs['data'])
+
+        if kwargs['timestamps'] is not None:
+            if not isinstance(kwargs['timestamps'], list) and not isinstance(kwargs['timestamps'], np.ndarray):
+                raise ValueError("'timestamps' needs to be a list or numpy array")
+
+            if isinstance(kwargs['timestamps'], np.ndarray):
+                kwargs['timestamps'] = list(kwargs['timestamps'])
 
         # if using interval format...
         if args_to_set['format'] == 'interval':
 
             # if no intervals input, set data to empty array and create empty timestamps array
             if kwargs['data'] is None:
-                kwargs['data'] = np.zeros(0)
+                kwargs['data'] = []
 
                 if kwargs['timestamps'] is not None:
                     raise ValueError("'timestamps' can't be specified without corresponding 'data'")
 
-                kwargs['timestamps'] = np.zeros(0)
+                kwargs['timestamps'] = []
             # if intervals are input, check that formatted correctly
             else:
 
@@ -198,17 +188,28 @@ class PhotostimulationSeries(TimeSeries):
                 warnings.warn("'stimulus_duration' should not be specified for 'PhotostimulationSeries' with interval format. Overriding.")
                 args_to_set['stimulus_duration'] = None
 
-        # if args_to_set['format'] == 'series'
+        # if using series format
+        if args_to_set['format'] == 'series':
+            if kwargs['data'] is None:
+                raise ValueError("if 'format' is 'series', 'data' must be specified")
+
+            if kwargs['timestamps'] is not None:
+                # check data and timestamps are same length
+                if len(kwargs['data']) != len(kwargs['timestamps']):
+                    raise ValueError("'data' and 'timestamps' need to be the same length")
+
+            if args_to_set['stimulus_duration'] is None:
+                warnings.warn("if 'format' is 'series', 'stimulus_duration' should be specified")
+
+            # check that data only consists of -1s and 1s (stim off/on)
+            for stim in kwargs['data']:
+                if stim not in [0, 1]:
+                    raise ValueError("series data needs to be only a 0 (off) or 1 (on)")
 
         super().__init__(**kwargs)
 
         for key, val in args_to_set.items():
             setattr(self, key, val)
-
-        self.format = self.format.lower()
-
-        if self.format == 'series' and self.stimulus_duration is None:
-            raise ValueError("'stimulus_duration' must be specified when 'format' is 'series'")
 
     @docval({'name': 'start', 'type': (int, float), 'doc': 'The start time of the interval'},
             {'name': 'stop', 'type': (int, float), 'doc': 'The stop time of the interval'})

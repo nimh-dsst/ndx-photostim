@@ -6,9 +6,17 @@ from collections.abc import Iterable
 from pynwb.core import NWBContainer, NWBDataInterface
 from pynwb.device import Device
 from hdmf.utils import docval, popargs, get_docval, get_data_shape #popargs_to_dict
+from pynwb import register_class, load_namespaces
+from pynwb.core import NWBContainer, NWBDataInterface
+from pynwb.base import TimeSeries
+from collections.abc import Iterable
+from pynwb.device import  Device
+from hdmf.utils import docval, popargs, get_docval, popargs_to_dict
+from pynwb.core import DynamicTable, VectorData
+import numpy as np
+from hdmf.utils import docval, getargs, popargs, popargs_to_dict, get_docval
+import warnings
 
-def popargs_to_dict(keys_to_set, kwargs):
-    return [kwargs.pop(key) for key in keys_to_set]
 
 
 # Set path of the namespace.yaml file to the expected install location
@@ -34,8 +42,11 @@ load_namespaces(ndx_photostim_specpath)
 # TODO: import your classes here or define your class using get_class to make
 # them accessible at the package level
 # SpatialLightModulator = get_class('SpatialLightModulator', 'ndx-photostim')
-register_class('SpatialLightModulator', 'ndx-photostim')
+@register_class('SpatialLightModulator', 'ndx-photostim')
 class SpatialLightModulator(NWBContainer):
+    """
+    Spatial light modulator class.
+    """
 
     __nwbfields__ = ('dimensions',)
 
@@ -50,61 +61,214 @@ class SpatialLightModulator(NWBContainer):
 
 @register_class('PhotostimulationDevice', 'ndx-photostim')
 class PhotostimulationDevice(Device):
+    """
+    Device used in photostimulation.
+    """
 
     __nwbfields__ = ('type', 'wavelength', 'slm')
 
     @docval(*get_docval(Device.__init__) + (
         {'name': 'type', 'type': str, 'doc': 'type of stimulation (laser or LED)', 'default': None},
-        {'name': 'wavelength', 'type': float, 'doc': 'wavelength of photostimulation', 'default': None},
-        {'name': 'slm', 'type': SpatialLightModulator, 'doc': 'spatial light modulator', 'default': None},
-        ))
+        {'name': 'wavelength', 'type': (int, float), 'doc': 'wavelength of photostimulation', 'default': None},
+        {'name': 'slm', 'type': SpatialLightModulator, 'doc': 'spatial light modulator', 'default': None}
+    ))
     def __init__(self, **kwargs):
-        keys_to_set = ("type",
-                       "wavelength",
-                       "slm")
+        keys_to_set = ("type", "wavelength", "slm")
         args_to_set = popargs_to_dict(keys_to_set, kwargs)
         super().__init__(**kwargs)
 
         for key, val in args_to_set.items():
             setattr(self, key, val)
 
+@register_class('ImagingPlane', 'ndx-photostim')
+class ImagingPlane(NWBContainer):
+    '''
+    Imaging plane.
+    '''
 
-@register_class('Photostimulation', 'ndx-photostim')
-class Photostimulation(NWBDataInterface):
+    __nwbfields__ = ('device', 'opsin', 'peak_pulse_power', 'power', 'pulse_rate')
 
-    # __nwbfields__ = ('device', 'roi_coordinates', 'stimulation_diameter')
-
-    @docval(*get_docval(NWBDataInterface.__init__) + (
+    @docval(*get_docval(NWBContainer.__init__) + (
         {'name': 'device', 'type': PhotostimulationDevice, 'doc': 'photostimulation device'},
-        {'name': 'roi_coordinates', 'type': Iterable, 'doc': '[n,2] or [n,3] list of coordinates', 'default': None},
-        {'name': 'stimulation_diameter', 'type': (int, float), 'doc': 'diameter of stimulation (pixels)', 'default': None},
-        {'name': 'roi_mask', 'type': 'array_data', 'doc': 'pixel mask for ROI', 'default': None},
         {'name': 'opsin', 'type': str, 'doc': 'opsin used', 'default': None},
-        {'name': 'peak_pulse_power', 'type': (int, float), 'doc': 'peak pulse power (J)', 'default': None}
+        {'name': 'peak_pulse_power', 'type': (int, float), 'doc': 'peak pulse power (J)', 'default': None},
+        {'name': 'power', 'type': (int, float), 'doc': 'power (in milliwatts)', 'default': None},
+        {'name': 'pulse_rate', 'type': (int, float), 'doc': 'pulse rate (Hz)', 'default': None}
         ))
     def __init__(self, **kwargs):
-        keys_to_set = ("device", "roi_coordinates",
-                       "stimulation_diameter", "roi_mask", "opsin", "peak_pulse_power")
+        keys_to_set = ("device", "opsin", "peak_pulse_power", "power", "pulse_rate")
         args_to_set = popargs_to_dict(keys_to_set, kwargs)
         super().__init__(**kwargs)
 
         for key, val in args_to_set.items():
             setattr(self, key, val)
 
-        if (self.roi_coordinates is None and self.stimulation_diameter is None) and (self.roi_mask is None):
-            raise TypeError("roi_coordinates & stimulation_diameter OR roi_mask must be specified")
+@register_class('HolographicPattern', 'ndx-photostim')
+class HolographicPattern(NWBContainer):
+    '''
+    Holographic pattern.
+    '''
 
+    __nwbfields__ = ('pixel_roi', 'mask_roi', 'stimulation_diameter', 'dimension')
 
-# @register_class('SpatialLightModulator' 'ndx-photostim')
-# class SpatialLightModulator(NWBContainer):
-#     __nwbfields__ = ('description',
-#                      'emission_lambda')
-#
-#     @docval({'name': 'name', 'type': str, 'doc': 'the name of this electrode'},  # required
-#             {'name': 'size', 'type': Iterable, 'doc': 'Any notes or comments about the channel.', 'shape': ((2, ), (3, ))},
-#             {'name': 'emission_lambda', 'type': float, 'doc': 'Emission wavelength for channel, in nm.'})  # required
-#     def __init__(self, **kwargs):
-#         description, emission_lambda = popargs("description", "emission_lambda", kwargs)
-#         super().__init__(**kwargs)
-#         self.description = description
-#         self.emission_lambda = emission_lambda
+    @docval(*get_docval(NWBContainer.__init__) + (
+            {'name': 'pixel_roi', 'type': Iterable, 'doc': 'pixel_mask ([x1, y1]) or voxel_mask ([x1, y1, z1])', 'default': None},
+            {'name': 'mask_roi', 'type': Iterable, 'doc': 'image with the same size of image where positive values mark this ROI', 'default': None},
+            {'name': 'stimulation_diameter', 'type': (int, float), 'doc': 'diameter of stimulation (pixels)',
+             'default': None},
+            {'name': 'dimension', 'type': Iterable, 'doc': 'Number of pixels on x, y, (and z) axes.', 'default': None}
+    ))
+    def __init__(self, **kwargs):
+        keys_to_set = ("pixel_roi", "mask_roi", "stimulation_diameter", "dimension")
+        args_to_set = popargs_to_dict(keys_to_set, kwargs)
+
+        super().__init__(**kwargs)
+        for key, val in args_to_set.items():
+            setattr(self, key, val)
+
+        if self.pixel_roi is not None and self.stimulation_diameter is None:
+            raise TypeError("'pixel_roi' & 'stimulation_diameter' OR 'roi_mask' must be specified")
+
+        if self.pixel_roi is not None and self.dimension is None:
+            raise ValueError("If providing 'image_mask', must supply 'dimension' when defining 'HolographicPattern'")
+
+        if self.dimension is None and self.mask_roi is not None:
+            self.dimension = np.array(self.mask_roi).shape
+
+    def pixel_to_image(self, pixel_mask):
+        """Converts a 2D pixel_mask of a ROI into an image_mask."""
+        image_matrix = np.zeros(self.dimension)
+        npmask = np.asarray(pixel_mask)
+
+        x_coords = npmask[:, 0].astype(np.int32)
+        y_coords = npmask[:, 1].astype(np.int32)
+        if len(self.dimension) == 2:
+            image_matrix[y_coords, x_coords] = 1
+        else:
+            z_coords = npmask[:, 2].astype(np.int32)
+            image_matrix[y_coords, x_coords, z_coords] = 1
+
+        return image_matrix
+
+    @staticmethod
+    def image_to_pixel(image_mask):
+        """Converts an image_mask of a ROI into a pixel_mask"""
+        pixel_mask = []
+        it = np.nditer(image_mask, flags=['multi_index'])
+        while not it.finished:
+            weight = it[0][()]
+            if weight > 0:
+                x = it.multi_index[0]
+                y = it.multi_index[1]
+                pixel_mask.append([x, y, 1])
+            it.iternext()
+        return pixel_mask
+
+    @docval({'name': 'description', 'type': str, 'doc': 'a brief description of what the region is'},
+            {'name': 'region', 'type': (slice, list, tuple), 'doc': 'the indices of the table', 'default': slice(None)},
+            {'name': 'name', 'type': str, 'doc': 'the name of the ROITableRegion', 'default': 'rois'})
+    def create_roi_table_region(self, **kwargs):
+        return self.create_region(**kwargs)
+
+@register_class('PhotostimulationSeries', 'ndx-photostim')
+class PhotostimulationSeries(TimeSeries):
+
+    __nwbfields__ = ('pattern', 'field_of_view')
+
+    @docval({'name': 'name', 'type': str, 'doc': 'name'},
+             {'name': 'data', 'type': ('array_data', 'data'), 'doc': 'name', 'default': None},
+             {'name': 'format', 'type': str, 'doc': 'name', 'default': 'interval'},
+             {'name': 'stimulus_duration', 'type': (int, float), 'doc': 'name', 'default': None},
+             {'name': 'pattern', 'type': HolographicPattern, 'doc': 'photostimulation pattern'},
+             {'name': 'field_of_view', 'type': (int, float), 'doc': 'diameter of stimulation (pixels)', 'default': None},
+             {'name': 'timestamps', 'type': ('array_data', 'data'), 'doc': 'name', 'default': None},
+            *get_docval(TimeSeries.__init__, 'unit', 'resolution', 'conversion',  'starting_time',
+                  'rate', 'comments', 'description', 'control', 'control_description', 'continuity')
+    )
+    def __init__(self, **kwargs):
+        keys_to_set = ("pattern", "field_of_view", "format", "stimulus_duration")
+        args_to_set = popargs_to_dict(keys_to_set, kwargs)
+
+        args_to_set['format'] = args_to_set['format'].lower()
+        if args_to_set['format'] not in ['interval', 'series']:
+            raise ValueError("'format' must be one of 'interval' or 'series'")
+
+        if kwargs['data'] is not None:
+            if not isinstance(kwargs['data'], list) and not isinstance(kwargs['data'], np.ndarray):
+                raise ValueError("'data' needs to be a list or numpy array")
+
+            if isinstance(kwargs['data'], np.ndarray):
+                kwargs['data'] = list(kwargs['data'])
+
+        if kwargs['timestamps'] is not None:
+            if not isinstance(kwargs['timestamps'], list) and not isinstance(kwargs['timestamps'], np.ndarray):
+                raise ValueError("'timestamps' needs to be a list or numpy array")
+
+            if isinstance(kwargs['timestamps'], np.ndarray):
+                kwargs['timestamps'] = list(kwargs['timestamps'])
+
+        # if using interval format...
+        if args_to_set['format'] == 'interval':
+
+            # if no intervals input, set data to empty array and create empty timestamps array
+            if kwargs['data'] is None:
+                kwargs['data'] = []
+
+                if kwargs['timestamps'] is not None:
+                    raise ValueError("'timestamps' can't be specified without corresponding 'data'")
+
+                kwargs['timestamps'] = []
+            # if intervals are input, check that formatted correctly
+            else:
+
+                # check that timestamps are also input
+                if kwargs['timestamps'] is None:
+                    raise ValueError("need to specify corresponding 'timestamps' for each entry in 'data'")
+
+                # check data and timestamps are same length
+                if len(kwargs['data']) != len(kwargs['timestamps']):
+                    raise ValueError("'data' and 'timestamps' need to be the same length")
+
+                # check that data only consists of -1s and 1s (stim off/on)
+                for stim in kwargs['data']:
+                    if stim not in [-1, 1]:
+                        raise ValueError("interval data needs to be only a -1 or 1")
+
+            if args_to_set['stimulus_duration'] is not None:
+                warnings.warn("'stimulus_duration' should not be specified for 'PhotostimulationSeries' with interval format. Overriding.")
+                args_to_set['stimulus_duration'] = None
+
+        # if using series format
+        if args_to_set['format'] == 'series':
+            if kwargs['data'] is None:
+                raise ValueError("if 'format' is 'series', 'data' must be specified")
+
+            if kwargs['timestamps'] is not None:
+                # check data and timestamps are same length
+                if len(kwargs['data']) != len(kwargs['timestamps']):
+                    raise ValueError("'data' and 'timestamps' need to be the same length")
+
+            if args_to_set['stimulus_duration'] is None:
+                warnings.warn("if 'format' is 'series', 'stimulus_duration' should be specified")
+
+            # check that data only consists of -1s and 1s (stim off/on)
+            for stim in kwargs['data']:
+                if stim not in [0, 1]:
+                    raise ValueError("series data needs to be only a 0 (off) or 1 (on)")
+
+        super().__init__(**kwargs)
+
+        for key, val in args_to_set.items():
+            setattr(self, key, val)
+
+    @docval({'name': 'start', 'type': (int, float), 'doc': 'The start time of the interval'},
+            {'name': 'stop', 'type': (int, float), 'doc': 'The stop time of the interval'})
+    def add_interval(self, **kwargs):
+        start, stop = getargs('start', 'stop', kwargs)
+        if self.format == 'series':
+            raise ValueError("Cannot add interval to PhotostimulationSeries with 'format' of 'series'")
+
+        self.data.append(1)
+        self.data.append(-1)
+        self.timestamps.append(start)
+        self.timestamps.append(stop)

@@ -6,6 +6,7 @@ from pynwb.spec import NWBNamespaceBuilder, export_spec, NWBGroupSpec, NWBAttrib
 # TODO: import other spec classes as needed
 # from pynwb.spec import NWBDatasetSpec, NWBLinkSpec, NWBDtypeSpec, NWBRefSpec
 from collections.abc import Iterable
+from pynwb.spec import NWBNamespaceBuilder, NWBGroupSpec, NWBAttributeSpec, NWBLinkSpec, NWBDtypeSpec, NWBDatasetSpec
 
 
 def main():
@@ -28,6 +29,8 @@ def main():
     ns_builder.include_type('NWBContainer', namespace='core')
     ns_builder.include_type('Device', namespace='core')
     ns_builder.include_type('NWBDataInterface', namespace='core')
+    ns_builder.include_type('TimeSeries', namespace='core')
+    ns_builder.include_type('DynamicTable', namespace='hdmf-common')
 
     # TODO: define your new data types
     # see https://pynwb.readthedocs.io/en/latest/extensions.html#extending-nwb
@@ -35,39 +38,51 @@ def main():
     slm = NWBGroupSpec(
         neurodata_type_def='SpatialLightModulator',
         neurodata_type_inc='NWBContainer',
-        doc=('Spatial light modulator used in holographic photostimulation'),
-        attributes=[
-            NWBAttributeSpec('dimensions', 'dimensions ([w, h] or [w, h, d]) of SLM field', 'numeric',
-                             shape=((2,), (3,)),
-                             )
-        ])
+        doc='SpatialLightModulator',
+        attributes=[NWBAttributeSpec('dimensions', 'dimensions ([w, h] or [w, h, d]) of SLM field', 'numeric',
+                                     shape=((2,), (3,)))])
 
-    photostim_device = NWBGroupSpec(
-        neurodata_type_def='PhotostimulationDevice',
-        neurodata_type_inc='Device',
-        doc=('photostimDevice'),
-        attributes=[
-            NWBAttributeSpec('type', 'type of stimulation (laser or LED)', 'text'),
-            NWBAttributeSpec('wavelength', 'wavelength of photostimulation', 'numeric'),
-            NWBAttributeSpec('slm', 'spatial light modulator device', RefSpec('GroupSpec', 'object'))
-        ])
+    psd = NWBGroupSpec(neurodata_type_def='PhotostimulationDevice',
+                       neurodata_type_inc='Device',
+                       doc=('PhotostimulationDevice'),
+                       attributes=[NWBAttributeSpec('type', 'type of stimulation (laser or LED)', 'text'),
+                                   NWBAttributeSpec('wavelength', 'wavelength of photostimulation', 'numeric')],
+                       links=[NWBLinkSpec(doc='slm', target_type='SpatialLightModulator', name='slm name')]
+                       )
 
-    photostim = NWBGroupSpec(
-        neurodata_type_def='Photostimulation',
-        neurodata_type_inc='NWBDataInterface',
-        doc=('photostimulation container'),
-        attributes=[
-            NWBAttributeSpec('device', 'photostimulation device', RefSpec('GroupSpec', 'object')),
-            NWBAttributeSpec('roi_coordinates', '[n,2] or [n,3] list of coordinates', 'numeric',
-                             shape=((None, 2), (None, 3))),
-            NWBAttributeSpec('stimulation_diameter', 'diameter of stimulation (pixels)', 'numeric'),
-            NWBAttributeSpec('roi_mask', 'mask of region of interest', 'numeric'),
-            NWBAttributeSpec('opsin', 'opsin used', 'text'),
-            NWBAttributeSpec('peak_pulse_power', 'peak pulse power (J)', 'numeric')
-        ])
+    ip = NWBGroupSpec(neurodata_type_def='ImagingPlane',
+                      neurodata_type_inc='NWBContainer',
+                      doc=('ImagingPlane'),
+                      attributes=[NWBAttributeSpec('opsin', 'opsin used', 'text'),
+                                  NWBAttributeSpec('peak_pulse_power', 'peak pulse power (J)', 'numeric'),
+                                  NWBAttributeSpec('power', 'power (in milliwatts)', 'numeric'),
+                                  NWBAttributeSpec('pulse_rate', 'pulse rate (Hz)', 'numeric')],
+                      links=[NWBLinkSpec(doc='PhotostimulationDevice', target_type='PhotostimulationDevice')]
+                      )
+
+    pixel_roi = NWBDatasetSpec(doc='[n,2] or [n,3] list of coordinates', name='pixel_roi',
+                               attributes=[
+                                   NWBAttributeSpec(name='stimulation_diameter', doc='stimulation_diameter',
+                                                    dtype='numeric')
+                               ])
+
+    mask_roi = NWBDatasetSpec(doc='mask of region of interest', name='mask_roi')
+
+    hp = NWBGroupSpec(
+        neurodata_type_def='HolographicPattern',
+        neurodata_type_inc='NWBContainer',
+        doc=('holographic pattern'),
+        attributes=[NWBAttributeSpec('dimension', 'dimension', 'numeric', shape=((2,), (3,)))],
+        datasets=[pixel_roi, mask_roi]
+    )
+
+    ps = NWBGroupSpec(
+        neurodata_type_def='PhotostimulationSeries',
+        neurodata_type_inc='TimeSeries',
+        doc=('PhotostimulationSeries container'))
 
     # TODO: add all of your new data types to this list
-    new_data_types = [slm, photostim_device, photostim]
+    new_data_types = [slm, psd, ip, hp, ps]
 
     # export the spec to yaml files in the spec folder
     output_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'spec'))
