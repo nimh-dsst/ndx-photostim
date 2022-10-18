@@ -1,6 +1,5 @@
 
 from pynwb.spec import NWBNamespaceBuilder, NWBGroupSpec, NWBAttributeSpec, NWBLinkSpec, NWBDtypeSpec, NWBDatasetSpec
-from pynwb.spec import RefSpec
 
 ns_path = "test.namespace.yaml"
 ext_source = "test.extensions.yaml"
@@ -18,7 +17,7 @@ slm = NWBGroupSpec(
         neurodata_type_inc='NWBContainer',
         doc='SpatialLightModulator',
         attributes=[NWBAttributeSpec('dimensions', 'dimensions ([w, h] or [w, h, d]) of SLM field', 'numeric', shape=((2,), (3,)))],
-        links=[NWBLinkSpec(doc='slm', target_type='PhotostimulationDevice')])
+)
 
 ns_builder.add_spec(ext_source, slm)
 
@@ -27,57 +26,57 @@ psd = NWBGroupSpec(neurodata_type_def='PhotostimulationDevice',
                    doc=('PhotostimulationDevice'),
                    attributes=[NWBAttributeSpec('type', 'type of stimulation (laser or LED)', 'text'),
                                NWBAttributeSpec('wavelength', 'wavelength of photostimulation', 'numeric')],
-                    # links=[NWBLinkSpec(doc='slm', target_type='SpatialLightModulator', name='slm')]
-)
+                   groups=[NWBGroupSpec(name='slm', doc='slm', neurodata_type_inc='SpatialLightModulator', quantity='?')]
+                   )
 
 ns_builder.add_spec(ext_source, psd)
 
-ip = NWBGroupSpec(neurodata_type_def='ImagingPlane',
+ip = NWBGroupSpec(neurodata_type_def='StimulationPlane',
                    neurodata_type_inc='NWBContainer',
                    doc=('ImagingPlane'),
-                   attributes=[NWBAttributeSpec('opsin', 'opsin used', 'text'),
-                               NWBAttributeSpec('peak_pulse_power', 'peak pulse power (J)', 'numeric'),
-                               NWBAttributeSpec('power', 'power (in milliwatts)', 'numeric'),
-                               NWBAttributeSpec('pulse_rate', 'pulse rate (Hz)', 'numeric')],
-                   links=[NWBLinkSpec(doc='PhotostimulationDevice', target_type='PhotostimulationDevice' )]
+                   attributes=[NWBAttributeSpec('opsin', 'opsin used', 'text', required=False),
+                               NWBAttributeSpec('peak_pulse_power', 'peak pulse power (J)', 'numeric', required=False),
+                               NWBAttributeSpec('power', 'power (in milliwatts)', 'numeric', required=False),
+                               NWBAttributeSpec('pulse_rate', 'pulse rate (Hz)', 'numeric', required=False)],
+                   groups=[NWBGroupSpec(name='device', doc='photostimulation device',
+                                        neurodata_type_inc='PhotostimulationDevice')]
 )
 
 ns_builder.add_spec(ext_source, ip)
 
-pixel_roi = NWBDatasetSpec(doc='[n,2] or [n,3] list of coordinates', name='pixel_roi',
+pixel_roi = NWBDatasetSpec(doc='[n,2] or [n,3] list of coordinates',
+                           name='pixel_roi',
+                           quantity='?',
                            attributes=[
-                               NWBAttributeSpec(name='stimulation_diameter', doc='stimulation_diameter', dtype='numeric')
+                               NWBAttributeSpec(name='stimulation_diameter', doc='stimulation_diameter', dtype='numeric', required=False)
                            ])
 
-mask_roi = NWBDatasetSpec(doc='mask of region of interest', name='mask_roi')
+mask_roi = NWBDatasetSpec(doc='mask of region of interest', name='mask_roi', quantity='?')
 
 hp = NWBGroupSpec(
         neurodata_type_def='HolographicPattern',
         neurodata_type_inc='NWBContainer',
         doc=('holographic pattern'),
-        attributes = [NWBAttributeSpec('dimension', 'dimension', 'numeric', shape=((2, ), (3,)))],
-    datasets=[pixel_roi, mask_roi]
+        attributes = [
+            NWBAttributeSpec('dimension', 'dimension', 'numeric', shape=((2, ), (3,)), required=False)
+        ],
+        datasets=[pixel_roi, mask_roi]
 )
 
 ns_builder.add_spec(ext_source, hp)
 
-# ps = NWBGroupSpec(
-#         neurodata_type_def='PhotostimulationSeries',
-#         neurodata_type_inc='TimeSeries',
-#         doc=('PhotostimulationSeries container'),
-#         attributes=[
-#             NWBAttributeSpec('pattern', 'photostimulation pattern', RefSpec('GroupSpec', 'object')),
-#             NWBAttributeSpec('format', 'format', 'text'),
-#             NWBAttributeSpec('stimulus_duration', 'format', 'numeric'),
-#             NWBAttributeSpec('field_of_view', 'fov', 'numeric')
-#         ])
-
-
 ps = NWBGroupSpec(
         neurodata_type_def='PhotostimulationSeries',
         neurodata_type_inc='TimeSeries',
-        doc=('PhotostimulationSeries container'))
+        doc=('PhotostimulationSeries container'),
+        attributes=[NWBAttributeSpec('format', 'format', 'text', required=False),
+                    NWBAttributeSpec('stimulus_duration', 'format', 'numeric', required=False),
+                    NWBAttributeSpec('field_of_view', 'fov', 'numeric', required=False)],
+        groups=[ip, hp]
+)
+
 
 
 ns_builder.add_spec(ext_source, ps)
+
 ns_builder.export(ns_path)

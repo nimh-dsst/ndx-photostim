@@ -6,19 +6,22 @@ from pynwb.device import  Device
 from hdmf.utils import docval, popargs, get_docval, popargs_to_dict
 from pynwb.core import DynamicTable, VectorData
 import numpy as np
-from hdmf.utils import docval, getargs, popargs, popargs_to_dict, get_docval
+from hdmf.utils import docval, getargs, popargs, popargs_to_dict, get_docval, call_docval_func
 import warnings
+from pynwb.io.core import NWBContainerMapper
+from pynwb import register_map
 
 ns_path = "test.namespace.yaml"
 load_namespaces(ns_path)
 
-@register_class('SpatialLightModulator', 'test')
+namespace = 'test'
+@register_class('SpatialLightModulator', namespace)
 class SpatialLightModulator(NWBContainer):
     """
     Spatial light modulator class.
     """
 
-    __nwbfields__ = ('name', 'dimensions')
+    __nwbfields__ = ('dimensions',)
 
     @docval(
         {'name': 'name', 'type': str, 'doc': 'name of spatial light modulator'},
@@ -29,34 +32,36 @@ class SpatialLightModulator(NWBContainer):
         super().__init__(**kwargs)
         self.dimensions = dimensions
 
-@register_class('PhotostimulationDevice', 'test')
+@register_class('PhotostimulationDevice', namespace)
 class PhotostimulationDevice(Device):
     """
     Device used in photostimulation.
     """
 
-    __nwbfields__ = ('type', 'wavelength', 'slm')
+    # __nwbfields__ = ({'name': 'slm', 'child': True}, 'type', 'wavelength')
+    __nwbfields__ = ({'name': 'slm', 'child': True}, 'type', 'wavelength')
 
     @docval(*get_docval(Device.__init__) + (
+            {'name': 'slm', 'type': SpatialLightModulator, 'doc': 'spatial light modulator',
+             'default': None},
         {'name': 'type', 'type': str, 'doc': 'type of stimulation (laser or LED)', 'default': None},
-        {'name': 'wavelength', 'type': (int, float), 'doc': 'wavelength of photostimulation', 'default': None},
-        {'name': 'slm', 'type': SpatialLightModulator, 'doc': 'spatial light modulator', 'default': None}
+        {'name': 'wavelength', 'type': (int, float), 'doc': 'wavelength of photostimulation', 'default': None}
     ))
     def __init__(self, **kwargs):
-        keys_to_set = ("type", "wavelength", "slm")
+        keys_to_set = ("slm", "type", "wavelength")
         args_to_set = popargs_to_dict(keys_to_set, kwargs)
         super().__init__(**kwargs)
 
         for key, val in args_to_set.items():
             setattr(self, key, val)
 
-@register_class('ImagingPlane', 'test')
-class ImagingPlane(NWBContainer):
+@register_class('StimulationPlane', namespace)
+class StimulationPlane(NWBContainer):
     '''
     Imaging plane.
     '''
 
-    __nwbfields__ = ('device', 'opsin', 'peak_pulse_power', 'power', 'pulse_rate')
+    __nwbfields__ = ({'name': 'device', 'child': True}, 'opsin', 'peak_pulse_power', 'power', 'pulse_rate')
 
     @docval(*get_docval(NWBContainer.__init__) + (
         {'name': 'device', 'type': PhotostimulationDevice, 'doc': 'photostimulation device'},
@@ -73,7 +78,7 @@ class ImagingPlane(NWBContainer):
         for key, val in args_to_set.items():
             setattr(self, key, val)
 
-@register_class('HolographicPattern', 'test')
+@register_class('HolographicPattern', namespace)
 class HolographicPattern(NWBContainer):
     '''
     Holographic pattern.
@@ -84,8 +89,7 @@ class HolographicPattern(NWBContainer):
     @docval(*get_docval(NWBContainer.__init__) + (
             {'name': 'pixel_roi', 'type': Iterable, 'doc': 'pixel_mask ([x1, y1]) or voxel_mask ([x1, y1, z1])', 'default': None},
             {'name': 'mask_roi', 'type': Iterable, 'doc': 'image with the same size of image where positive values mark this ROI', 'default': None},
-            {'name': 'stimulation_diameter', 'type': (int, float), 'doc': 'diameter of stimulation (pixels)',
-             'default': None},
+            {'name': 'stimulation_diameter', 'type': (int, float), 'doc': 'diameter of stimulation (pixels)'},
             {'name': 'dimension', 'type': Iterable, 'doc': 'Number of pixels on x, y, (and z) axes.', 'default': None}
     ))
     def __init__(self, **kwargs):
@@ -93,17 +97,18 @@ class HolographicPattern(NWBContainer):
         args_to_set = popargs_to_dict(keys_to_set, kwargs)
 
         super().__init__(**kwargs)
+        # call_docval_func(super().__init__, kwargs)
         for key, val in args_to_set.items():
             setattr(self, key, val)
 
-        if self.pixel_roi is not None and self.stimulation_diameter is None:
-            raise TypeError("'pixel_roi' & 'stimulation_diameter' OR 'mask_roi' must be specified")
+        # if self.pixel_roi is not None and self.stimulation_diameter is None:
+        #     raise TypeError("'pixel_roi' & 'stimulation_diameter' OR 'mask_roi' must be specified")
 
-        if self.pixel_roi is not None and self.dimension is None:
-            raise ValueError("if providing 'image_mask', must supply 'dimension' when defining 'HolographicPattern'")
+        # if self.pixel_roi is not None and self.dimension is None:
+        #     raise ValueError("if providing 'image_mask', must supply 'dimension' when defining 'HolographicPattern'")
 
-        if self.dimension is None and self.mask_roi is not None:
-            self.dimension = np.array(self.mask_roi).shape
+        # if self.dimension is None and self.mask_roi is not None:
+        #     self.dimension = np.array(self.mask_roi).shape
 
     @staticmethod
     def image_to_pixel(image_mask):
@@ -119,26 +124,31 @@ class HolographicPattern(NWBContainer):
             it.iternext()
         return pixel_mask
 
-@register_class('PhotostimulationSeries', 'test')
+@register_map(HolographicPattern)
+class HolographicPatternMap(NWBContainerMapper):
+
+    def __init__(self, spec):
+        super().__init__(spec)
+        pixel_roi_spec = self.spec.get_dataset('pixel_roi')
+        self.map_spec('stimulation_diameter', pixel_roi_spec.get_attribute('stimulation_diameter'))
+
+@register_class('PhotostimulationSeries', namespace)
 class PhotostimulationSeries(TimeSeries):
 
-    __nwbfields__ = ('pattern', 'field_of_view')
+    __nwbfields__ = ({'name': 'stimulation_plane', 'child': True}, {'name': 'holographic_pattern', 'child': True}, 'format', 'stimulus_duration', 'field_of_view')
 
-    @docval({'name': 'name', 'type': str, 'doc': 'name'},
-            {'name': 'imaging_plane', 'type': ImagingPlane, 'doc': 'imaging_plane'},
-            {'name': 'pattern', 'type': HolographicPattern, 'doc': 'photostimulation pattern'},
+    @docval(*get_docval(TimeSeries.__init__) + (
+            {'name': 'stimulation_plane', 'type': StimulationPlane, 'doc': 'imaging_plane'},
+            {'name': 'holographic_pattern', 'type': HolographicPattern, 'doc': 'photostimulation pattern'},
             {'name': 'format', 'type': str, 'doc': 'name', 'default': 'interval'},
-             {'name': 'data', 'type': ('array_data', 'data'), 'doc': 'name', 'default': None},
              {'name': 'stimulus_duration', 'type': (int, float), 'doc': 'name', 'default': None},
-             {'name': 'field_of_view', 'type': (int, float), 'doc': 'diameter of stimulation (pixels)', 'default': None},
-             {'name': 'timestamps', 'type': ('array_data', 'data'), 'doc': 'name', 'default': None},
-            *get_docval(TimeSeries.__init__, 'unit', 'resolution', 'conversion',  'starting_time',
-                  'rate', 'comments', 'description', 'control', 'control_description', 'continuity')
+             {'name': 'field_of_view', 'type': (int, float), 'doc': 'diameter of stimulation (pixels)', 'default': None})
     )
     def __init__(self, **kwargs):
-        keys_to_set = ("pattern", "field_of_view", "format", "stimulus_duration", "imaging_plane")
+        # keys_to_set = ('stimulation_plane', 'holographic_pattern', 'format', 'stimulus_duration', 'field_of_view')
+        keys_to_set = ('stimulation_plane', 'holographic_pattern',  'format', 'stimulus_duration', 'field_of_view')
         args_to_set = popargs_to_dict(keys_to_set, kwargs)
-
+        #
         args_to_set['format'] = args_to_set['format'].lower()
         if args_to_set['format'] not in ['interval', 'series']:
             raise ValueError("'format' must be one of 'interval' or 'series'")
@@ -211,6 +221,8 @@ class PhotostimulationSeries(TimeSeries):
         for key, val in args_to_set.items():
             setattr(self, key, val)
 
+
+
     @docval({'name': 'start', 'type': (int, float), 'doc': 'The start time of the interval'},
             {'name': 'stop', 'type': (int, float), 'doc': 'The stop time of the interval'})
     def add_interval(self, **kwargs):
@@ -222,4 +234,35 @@ class PhotostimulationSeries(TimeSeries):
         self.data.append(-1)
         self.timestamps.append(start)
         self.timestamps.append(stop)
+
+
+
+@register_class('Events', 'test')
+class Events(NWBDataInterface):
+    """
+    A list of timestamps, stored in seconds, of an event.
+    """
+
+    __nwbfields__ = ('description',
+                     'timestamps',
+                     'resolution',
+                     {'name': 'unit', 'settable': False})
+
+    @docval({'name': 'name', 'type': str, 'doc': 'The name of this Events object'},  # required
+            {'name': 'description', 'type': str, 'doc': 'The name of this Events object'},  # required
+            {'name': 'timestamps', 'type': ('array_data', 'data'),  # required
+             'doc': ('Event timestamps, in seconds, relative to the common experiment master-clock '
+                     'stored in NWBFile.timestamps_reference_time.'),
+             'shape': (None,)},
+            {'name': 'resolution', 'type': float,
+             'doc': ('The smallest possible difference between two event times. Usually 1 divided '
+                     'by the event time sampling rate on the data acquisition system.'),
+             'default': None})
+    def __init__(self, **kwargs):
+        description, timestamps, resolution = popargs('description', 'timestamps', 'resolution', kwargs)
+        super().__init__(**kwargs)
+        self.description = description
+        self.timestamps = timestamps
+        self.resolution = resolution
+        self.fields['unit'] = 'seconds'
 
