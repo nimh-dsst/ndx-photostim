@@ -1,5 +1,5 @@
 
-from pynwb.spec import NWBNamespaceBuilder, NWBGroupSpec, NWBAttributeSpec, NWBLinkSpec, NWBDtypeSpec, NWBDatasetSpec
+from pynwb.spec import NWBNamespaceBuilder, NWBGroupSpec, NWBAttributeSpec, NWBLinkSpec, NWBDtypeSpec, NWBDatasetSpec, NWBRefSpec
 
 ns_path = "test.namespace.yaml"
 ext_source = "test.extensions.yaml"
@@ -49,7 +49,8 @@ pixel_roi = NWBDatasetSpec(doc='[n,2] or [n,3] list of coordinates',
                            quantity='?',
                            attributes=[
                                NWBAttributeSpec(name='stimulation_diameter', doc='stimulation_diameter', dtype='numeric', required=False)
-                           ])
+                           ]
+                           )
 
 mask_roi = NWBDatasetSpec(doc='mask of region of interest', name='mask_roi', quantity='?')
 
@@ -76,7 +77,35 @@ ps = NWBGroupSpec(
 )
 
 
-
 ns_builder.add_spec(ext_source, ps)
+
+label_col = NWBDatasetSpec(name='label', neurodata_type_inc='VectorData', dtype='text',
+                           doc='Label for each event type.')
+
+description_col = NWBDatasetSpec(
+    name='description',
+    neurodata_type_inc='VectorData',
+    dtype='text',
+    doc='Description for each event type.',
+)
+
+stim_col = NWBDatasetSpec(
+    name='stimulus',
+    doc='Label for each event type.',
+)
+
+pres_col = NWBDatasetSpec(name='presentation', doc='pres', quantity='?')#, dtype=NWBRefSpec(target_type='PhotostimulationSeries', reftype='object'))
+
+sp = NWBGroupSpec(
+        neurodata_type_def='StimulusPresentation',
+        neurodata_type_inc='DynamicTable',
+        doc=("Table to hold event timestamps and event metadata relevant to data preprocessing and analysis. Each "
+         "row corresponds to a different event type. Use the 'event_times' dataset to store timestamps for each "
+         "event type. Add user-defined columns to add metadata for each event type or event time."),
+    datasets=[label_col, description_col, stim_col, pres_col]
+)
+
+ns_builder.add_spec(ext_source, sp)
+
 
 ns_builder.export(ns_path)

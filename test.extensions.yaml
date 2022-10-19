@@ -9,9 +9,6 @@ groups:
     - - 2
     - - 3
     doc: dimensions ([w, h] or [w, h, d]) of SLM field
-  links:
-  - target_type: PhotostimulationDevice
-    doc: slm
 - neurodata_type_def: PhotostimulationDevice
   neurodata_type_inc: Device
   doc: PhotostimulationDevice
@@ -22,25 +19,35 @@ groups:
   - name: wavelength
     dtype: numeric
     doc: wavelength of photostimulation
-- neurodata_type_def: ImagingPlane
+  groups:
+  - name: slm
+    neurodata_type_inc: SpatialLightModulator
+    doc: slm
+    quantity: '?'
+- neurodata_type_def: StimulationPlane
   neurodata_type_inc: NWBContainer
   doc: ImagingPlane
   attributes:
   - name: opsin
     dtype: text
     doc: opsin used
+    required: false
   - name: peak_pulse_power
     dtype: numeric
     doc: peak pulse power (J)
+    required: false
   - name: power
     dtype: numeric
     doc: power (in milliwatts)
+    required: false
   - name: pulse_rate
     dtype: numeric
     doc: pulse rate (Hz)
-  links:
-  - target_type: PhotostimulationDevice
-    doc: PhotostimulationDevice
+    required: false
+  groups:
+  - name: device
+    neurodata_type_inc: PhotostimulationDevice
+    doc: photostimulation device
 - neurodata_type_def: HolographicPattern
   neurodata_type_inc: NWBContainer
   doc: holographic pattern
@@ -51,15 +58,100 @@ groups:
     - - 2
     - - 3
     doc: dimension
+    required: false
   datasets:
   - name: pixel_roi
     doc: '[n,2] or [n,3] list of coordinates'
+    quantity: '?'
     attributes:
     - name: stimulation_diameter
       dtype: numeric
       doc: stimulation_diameter
+      required: false
   - name: mask_roi
     doc: mask of region of interest
+    quantity: '?'
 - neurodata_type_def: PhotostimulationSeries
   neurodata_type_inc: TimeSeries
   doc: PhotostimulationSeries container
+  attributes:
+  - name: format
+    dtype: text
+    doc: format
+    required: false
+  - name: stimulus_duration
+    dtype: numeric
+    doc: format
+    required: false
+  - name: field_of_view
+    dtype: numeric
+    doc: fov
+    required: false
+  groups:
+  - neurodata_type_def: StimulationPlane
+    neurodata_type_inc: NWBContainer
+    doc: ImagingPlane
+    attributes:
+    - name: opsin
+      dtype: text
+      doc: opsin used
+      required: false
+    - name: peak_pulse_power
+      dtype: numeric
+      doc: peak pulse power (J)
+      required: false
+    - name: power
+      dtype: numeric
+      doc: power (in milliwatts)
+      required: false
+    - name: pulse_rate
+      dtype: numeric
+      doc: pulse rate (Hz)
+      required: false
+    groups:
+    - name: device
+      neurodata_type_inc: PhotostimulationDevice
+      doc: photostimulation device
+  - neurodata_type_def: HolographicPattern
+    neurodata_type_inc: NWBContainer
+    doc: holographic pattern
+    attributes:
+    - name: dimension
+      dtype: numeric
+      shape:
+      - - 2
+      - - 3
+      doc: dimension
+      required: false
+    datasets:
+    - name: pixel_roi
+      doc: '[n,2] or [n,3] list of coordinates'
+      quantity: '?'
+      attributes:
+      - name: stimulation_diameter
+        dtype: numeric
+        doc: stimulation_diameter
+        required: false
+    - name: mask_roi
+      doc: mask of region of interest
+      quantity: '?'
+- neurodata_type_def: StimulusPresentation
+  neurodata_type_inc: DynamicTable
+  doc: Table to hold event timestamps and event metadata relevant to data preprocessing
+    and analysis. Each row corresponds to a different event type. Use the 'event_times'
+    dataset to store timestamps for each event type. Add user-defined columns to add
+    metadata for each event type or event time.
+  datasets:
+  - name: label
+    neurodata_type_inc: VectorData
+    dtype: text
+    doc: Label for each event type.
+  - name: description
+    neurodata_type_inc: VectorData
+    dtype: text
+    doc: Description for each event type.
+  - name: stimulus
+    doc: Label for each event type.
+  - name: presentation
+    doc: pres
+    quantity: '?'

@@ -10,6 +10,7 @@ from hdmf.utils import docval, getargs, popargs, popargs_to_dict, get_docval, ca
 import warnings
 from pynwb.io.core import NWBContainerMapper
 from pynwb import register_map
+from pynwb.base import TimeSeries, TimeSeriesReferenceVectorData, TimeSeriesReference
 
 ns_path = "test.namespace.yaml"
 load_namespaces(ns_path)
@@ -89,7 +90,7 @@ class HolographicPattern(NWBContainer):
     @docval(*get_docval(NWBContainer.__init__) + (
             {'name': 'pixel_roi', 'type': Iterable, 'doc': 'pixel_mask ([x1, y1]) or voxel_mask ([x1, y1, z1])', 'default': None},
             {'name': 'mask_roi', 'type': Iterable, 'doc': 'image with the same size of image where positive values mark this ROI', 'default': None},
-            {'name': 'stimulation_diameter', 'type': (int, float), 'doc': 'diameter of stimulation (pixels)'},
+            {'name': 'stimulation_diameter', 'type': (int, float), 'doc': 'diameter of stimulation (pixels)', 'default': None},
             {'name': 'dimension', 'type': Iterable, 'doc': 'Number of pixels on x, y, (and z) axes.', 'default': None}
     ))
     def __init__(self, **kwargs):
@@ -111,6 +112,28 @@ class HolographicPattern(NWBContainer):
         #     self.dimension = np.array(self.mask_roi).shape
 
     @staticmethod
+    def create_circular_mask(h, w, center=None, radius=None):
+
+        if center is None:  # use the middle of the image
+            center = (int(w / 2), int(h / 2))
+        if radius is None:  # use the smallest distance between the center and image walls
+            radius = min(center[0], center[1], w - center[0], h - center[1])
+
+        Y, X = np.ogrid[:h, :w]
+        dist_from_center = np.sqrt((X - center[0]) ** 2 + (Y - center[1]) ** 2)
+
+        mask = dist_from_center <= radius
+        return mask
+
+    def pixel_to_mask_roi(self):
+        mask = np.zeros(shape=self.dimension)
+        for roi in self.pixel_roi:
+            tmp_mask = self.create_circular_mask(self.dimension[0], self.dimension[1], roi, self.stimulation_diameter/2)
+            mask[tmp_mask] = 1
+
+        return mask
+
+    @staticmethod
     def image_to_pixel(image_mask):
         """Converts an image_mask of a ROI into a pixel_mask"""
         pixel_mask = []
@@ -124,6 +147,8 @@ class HolographicPattern(NWBContainer):
             it.iternext()
         return pixel_mask
 
+
+
 @register_map(HolographicPattern)
 class HolographicPatternMap(NWBContainerMapper):
 
@@ -131,6 +156,8 @@ class HolographicPatternMap(NWBContainerMapper):
         super().__init__(spec)
         pixel_roi_spec = self.spec.get_dataset('pixel_roi')
         self.map_spec('stimulation_diameter', pixel_roi_spec.get_attribute('stimulation_diameter'))
+
+
 
 @register_class('PhotostimulationSeries', namespace)
 class PhotostimulationSeries(TimeSeries):
@@ -160,68 +187,66 @@ class PhotostimulationSeries(TimeSeries):
             if isinstance(kwargs['data'], np.ndarray):
                 kwargs['data'] = list(kwargs['data'])
 
-        if kwargs['timestamps'] is not None:
-            if not isinstance(kwargs['timestamps'], list) and not isinstance(kwargs['timestamps'], np.ndarray):
-                raise ValueError("'timestamps' needs to be a list or numpy array")
-
-            if isinstance(kwargs['timestamps'], np.ndarray):
-                kwargs['timestamps'] = list(kwargs['timestamps'])
-
-        # if using interval format...
-        if args_to_set['format'] == 'interval':
-
-            # if no intervals input, set data to empty array and create empty timestamps array
-            if kwargs['data'] is None:
-                kwargs['data'] = []
-
-                if kwargs['timestamps'] is not None:
-                    raise ValueError("'timestamps' can't be specified without corresponding 'data'")
-
-                kwargs['timestamps'] = []
-            # if intervals are input, check that formatted correctly
-            else:
-
-                # check that timestamps are also input
-                if kwargs['timestamps'] is None:
-                    raise ValueError("need to specify corresponding 'timestamps' for each entry in 'data'")
-
-                # check data and timestamps are same length
-                if len(kwargs['data']) != len(kwargs['timestamps']):
-                    raise ValueError("'data' and 'timestamps' need to be the same length")
-
-                # check that data only consists of -1s and 1s (stim off/on)
-                for stim in kwargs['data']:
-                    if stim not in [-1, 1]:
-                        raise ValueError("interval data needs to be only a -1 or 1")
-
-            if args_to_set['stimulus_duration'] is not None:
-                warnings.warn("'stimulus_duration' should not be specified for 'PhotostimulationSeries' with interval format. Overriding.")
-                args_to_set['stimulus_duration'] = None
-
-        # if using series format
-        if args_to_set['format'] == 'series':
-            if kwargs['data'] is None:
-                raise ValueError("if 'format' is 'series', 'data' must be specified")
-
-            if kwargs['timestamps'] is not None:
-                # check data and timestamps are same length
-                if len(kwargs['data']) != len(kwargs['timestamps']):
-                    raise ValueError("'data' and 'timestamps' need to be the same length")
-
-            if args_to_set['stimulus_duration'] is None:
-                warnings.warn("if 'format' is 'series', 'stimulus_duration' should be specified")
-
-            # check that data only consists of -1s and 1s (stim off/on)
-            for stim in kwargs['data']:
-                if stim not in [0, 1]:
-                    raise ValueError("series data needs to be only a 0 (off) or 1 (on)")
+        # if kwargs['timestamps'] is not None:
+        #     if not isinstance(kwargs['timestamps'], list) and not isinstance(kwargs['timestamps'], np.ndarray):
+        #         raise ValueError("'timestamps' needs to be a list or numpy array")
+        #
+        #     if isinstance(kwargs['timestamps'], np.ndarray):
+        #         kwargs['timestamps'] = list(kwargs['timestamps'])
+        #
+        # # if using interval format...
+        # if args_to_set['format'] == 'interval':
+        #
+        #     # if no intervals input, set data to empty array and create empty timestamps array
+        #     if kwargs['data'] is None:
+        #         kwargs['data'] = []
+        #
+        #         if kwargs['timestamps'] is not None:
+        #             raise ValueError("'timestamps' can't be specified without corresponding 'data'")
+        #
+        #         kwargs['timestamps'] = []
+        #     # if intervals are input, check that formatted correctly
+        #     else:
+        #
+        #         # check that timestamps are also input
+        #         if kwargs['timestamps'] is None:
+        #             raise ValueError("need to specify corresponding 'timestamps' for each entry in 'data'")
+        #
+        #         # check data and timestamps are same length
+        #         if len(kwargs['data']) != len(kwargs['timestamps']):
+        #             raise ValueError("'data' and 'timestamps' need to be the same length")
+        #
+        #         # check that data only consists of -1s and 1s (stim off/on)
+        #         for stim in kwargs['data']:
+        #             if stim not in [-1, 1]:
+        #                 raise ValueError("interval data needs to be only a -1 or 1")
+        #
+        #     if args_to_set['stimulus_duration'] is not None:
+        #         warnings.warn("'stimulus_duration' should not be specified for 'PhotostimulationSeries' with interval format. Overriding.")
+        #         args_to_set['stimulus_duration'] = None
+        #
+        # # if using series format
+        # if args_to_set['format'] == 'series':
+        #     if kwargs['data'] is None:
+        #         raise ValueError("if 'format' is 'series', 'data' must be specified")
+        #
+        #     if kwargs['timestamps'] is not None:
+        #         # check data and timestamps are same length
+        #         if len(kwargs['data']) != len(kwargs['timestamps']):
+        #             raise ValueError("'data' and 'timestamps' need to be the same length")
+        #
+        #     if args_to_set['stimulus_duration'] is None:
+        #         warnings.warn("if 'format' is 'series', 'stimulus_duration' should be specified")
+        #
+        #     # check that data only consists of -1s and 1s (stim off/on)
+        #     for stim in kwargs['data']:
+        #         if stim not in [0, 1]:
+        #             raise ValueError("series data needs to be only a 0 (off) or 1 (on)")
 
         super().__init__(**kwargs)
 
         for key, val in args_to_set.items():
             setattr(self, key, val)
-
-
 
     @docval({'name': 'start', 'type': (int, float), 'doc': 'The start time of the interval'},
             {'name': 'stop', 'type': (int, float), 'doc': 'The stop time of the interval'})
@@ -235,34 +260,34 @@ class PhotostimulationSeries(TimeSeries):
         self.timestamps.append(start)
         self.timestamps.append(stop)
 
-
-
-@register_class('Events', 'test')
-class Events(NWBDataInterface):
+@register_class('StimulusPresentation', namespace)
+class StimulusPresentation(DynamicTable):
     """
-    A list of timestamps, stored in seconds, of an event.
+    Table for storing Epoch data
     """
 
-    __nwbfields__ = ('description',
-                     'timestamps',
-                     'resolution',
-                     {'name': 'unit', 'settable': False})
+    __defaultname__ = 'epochs'
 
-    @docval({'name': 'name', 'type': str, 'doc': 'The name of this Events object'},  # required
-            {'name': 'description', 'type': str, 'doc': 'The name of this Events object'},  # required
-            {'name': 'timestamps', 'type': ('array_data', 'data'),  # required
-             'doc': ('Event timestamps, in seconds, relative to the common experiment master-clock '
-                     'stored in NWBFile.timestamps_reference_time.'),
-             'shape': (None,)},
-            {'name': 'resolution', 'type': float,
-             'doc': ('The smallest possible difference between two event times. Usually 1 divided '
-                     'by the event time sampling rate on the data acquisition system.'),
-             'default': None})
+    __columns__ = (
+        {'name': 'label', 'description': 'Start time of epoch, in seconds', 'required': True},
+        {'name': 'description', 'description': 'Stop time of epoch, in seconds', 'required': True},
+        {'name': 'stimulus', 'description': 'Stop time of epoch, in seconds', 'required': True},
+        {'name': 'presentation', 'description': 'Stop time of epoch, in seconds', 'required': False}
+    )
+
+    @docval({'name': 'name', 'type': str, 'doc': 'name of this TimeIntervals'},  # required
+            {'name': 'description', 'type': str, 'doc': 'Description of this TimeIntervals'},
+            *get_docval(DynamicTable.__init__, 'id', 'columns', 'colnames'))
     def __init__(self, **kwargs):
-        description, timestamps, resolution = popargs('description', 'timestamps', 'resolution', kwargs)
         super().__init__(**kwargs)
-        self.description = description
-        self.timestamps = timestamps
-        self.resolution = resolution
-        self.fields['unit'] = 'seconds'
+
+    @docval({'name': 'label', 'type': str, 'doc': 'name of this TimeIntervals'},
+            {'name': 'description', 'type': str, 'doc': 'name of this TimeIntervals'},
+            {'name': 'stimulus', 'type':HolographicPattern, 'doc': 'name of this TimeIntervals'},
+            {'name': 'presentation', 'type': (PhotostimulationSeries, list), 'doc': 'name of this TimeIntervals', 'default': []})
+    def add_event_type(self, **kwargs):
+        """Add an event type as a row to this table."""
+        super().add_row(**kwargs)
+
+
 
