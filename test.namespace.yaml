@@ -4,12 +4,18 @@ namespaces:
   schema:
   - namespace: core
     neurodata_types:
+    - TimeSeries
+    - NWBDataInterface
     - NWBContainer
     - Device
-    - NWBDataInterface
-    - TimeSeries
+    - TimeIntervals
   - namespace: hdmf-common
     neurodata_types:
+    - Container
     - DynamicTable
+    - DynamicTableRegion
+    - VectorData
+    - Data
+    - ElementIdentifiers
   - source: test.extensions.yaml
   version: 0.1.0

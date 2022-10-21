@@ -1,14 +1,17 @@
 groups:
 - neurodata_type_def: SpatialLightModulator
-  neurodata_type_inc: NWBContainer
-  doc: SpatialLightModulator
+  neurodata_type_inc: Device
+  name: slm
+  doc: slm
+  quantity: '?'
   attributes:
-  - name: dimensions
+  - name: dimension
     dtype: numeric
     shape:
     - - 2
     - - 3
-    doc: dimensions ([w, h] or [w, h, d]) of SLM field
+    doc: dimension
+    required: false
 - neurodata_type_def: PhotostimulationDevice
   neurodata_type_inc: Device
   doc: PhotostimulationDevice
@@ -19,15 +22,7 @@ groups:
   - name: wavelength
     dtype: numeric
     doc: wavelength of photostimulation
-  groups:
-  - name: slm
-    neurodata_type_inc: SpatialLightModulator
-    doc: slm
-    quantity: '?'
-- neurodata_type_def: StimulationPlane
-  neurodata_type_inc: NWBContainer
-  doc: ImagingPlane
-  attributes:
+    required: false
   - name: opsin
     dtype: text
     doc: opsin used
@@ -45,9 +40,19 @@ groups:
     doc: pulse rate (Hz)
     required: false
   groups:
-  - name: device
-    neurodata_type_inc: PhotostimulationDevice
-    doc: photostimulation device
+  - neurodata_type_def: SpatialLightModulator
+    neurodata_type_inc: Device
+    name: slm
+    doc: slm
+    quantity: '?'
+    attributes:
+    - name: dimension
+      dtype: numeric
+      shape:
+      - - 2
+      - - 3
+      doc: dimension
+      required: false
 - neurodata_type_def: HolographicPattern
   neurodata_type_inc: NWBContainer
   doc: holographic pattern
@@ -69,11 +74,26 @@ groups:
       doc: stimulation_diameter
       required: false
   - name: mask_roi
-    doc: mask of region of interest
+    dtype: uint8
+    dims:
+    - - num_rows
+      - num_cols
+    - - num_rows
+      - num_cols
+      - depth
+    shape:
+    - - null
+      - null
+    - - null
+      - null
+      - null
+    doc: ROI masks for each ROI. Each image mask is the size of the original imaging
+      plane (orvolume) and members of the ROI are finite non-zero.
     quantity: '?'
 - neurodata_type_def: PhotostimulationSeries
   neurodata_type_inc: TimeSeries
   doc: PhotostimulationSeries container
+  quantity: '*'
   attributes:
   - name: format
     dtype: text
@@ -88,30 +108,6 @@ groups:
     doc: fov
     required: false
   groups:
-  - neurodata_type_def: StimulationPlane
-    neurodata_type_inc: NWBContainer
-    doc: ImagingPlane
-    attributes:
-    - name: opsin
-      dtype: text
-      doc: opsin used
-      required: false
-    - name: peak_pulse_power
-      dtype: numeric
-      doc: peak pulse power (J)
-      required: false
-    - name: power
-      dtype: numeric
-      doc: power (in milliwatts)
-      required: false
-    - name: pulse_rate
-      dtype: numeric
-      doc: pulse rate (Hz)
-      required: false
-    groups:
-    - name: device
-      neurodata_type_inc: PhotostimulationDevice
-      doc: photostimulation device
   - neurodata_type_def: HolographicPattern
     neurodata_type_inc: NWBContainer
     doc: holographic pattern
@@ -133,25 +129,62 @@ groups:
         doc: stimulation_diameter
         required: false
     - name: mask_roi
-      doc: mask of region of interest
+      dtype: uint8
+      dims:
+      - - num_rows
+        - num_cols
+      - - num_rows
+        - num_cols
+        - depth
+      shape:
+      - - null
+        - null
+      - - null
+        - null
+        - null
+      doc: ROI masks for each ROI. Each image mask is the size of the original imaging
+        plane (orvolume) and members of the ROI are finite non-zero.
       quantity: '?'
 - neurodata_type_def: StimulusPresentation
-  neurodata_type_inc: DynamicTable
+  neurodata_type_inc: TimeIntervals
   doc: Table to hold event timestamps and event metadata relevant to data preprocessing
     and analysis. Each row corresponds to a different event type. Use the 'event_times'
     dataset to store timestamps for each event type. Add user-defined columns to add
     metadata for each event type or event time.
+  quantity: '?'
+  attributes:
+  - name: stimulus_method
+    dtype: text
+    doc: format
+  - name: sweeping_method
+    dtype: text
+    doc: format
+    required: false
+  - name: time_per_sweep
+    dtype: numeric
+    doc: format
+    required: false
+  - name: num_sweeps
+    dtype: numeric
+    doc: format
+    required: false
   datasets:
   - name: label
     neurodata_type_inc: VectorData
     dtype: text
     doc: Label for each event type.
-  - name: description
+  - name: stimulus_description
     neurodata_type_inc: VectorData
     dtype: text
-    doc: Description for each event type.
-  - name: stimulus
     doc: Label for each event type.
-  - name: presentation
-    doc: pres
     quantity: '?'
+  - name: photostimulation_series
+    neurodata_type_inc: VectorData
+    dtype:
+      target_type: PhotostimulationSeries
+      reftype: object
+    doc: asdas
+  links:
+  - name: photostimulation_device
+    target_type: PhotostimulationDevice
+    doc: photostimulation device
