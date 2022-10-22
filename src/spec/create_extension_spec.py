@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 import os.path
-from pynwb.spec import NWBDatasetSpec, NWBDtypeSpec, RefSpec
 
-from pynwb.spec import NWBNamespaceBuilder, export_spec, NWBGroupSpec, NWBAttributeSpec
 # TODO: import other spec classes as needed
 # from pynwb.spec import NWBDatasetSpec, NWBLinkSpec, NWBDtypeSpec, NWBRefSpec
-from collections.abc import Iterable
-from pynwb.spec import NWBNamespaceBuilder, NWBGroupSpec, NWBAttributeSpec, NWBLinkSpec, NWBDtypeSpec, NWBDatasetSpec
+from pynwb.spec import NWBNamespaceBuilder, NWBGroupSpec, NWBAttributeSpec, NWBLinkSpec, NWBDatasetSpec
+from pynwb.spec import NWBRefSpec
+from pynwb.spec import export_spec
 
 
 def main():
@@ -26,63 +25,98 @@ def main():
     # all types included or used by the types specified here will also be
     # included.
     # ns_builder.include_type('ElectricalSeries', namespace='core')
-    ns_builder.include_type('NWBContainer', namespace='core')
-    ns_builder.include_type('Device', namespace='core')
-    ns_builder.include_type('NWBDataInterface', namespace='core')
-    ns_builder.include_type('TimeSeries', namespace='core')
-    ns_builder.include_type('DynamicTable', namespace='hdmf-common')
+    ns_builder.include_type("TimeSeries", namespace="core")
+    ns_builder.include_type("NWBDataInterface", namespace="core")
+    ns_builder.include_type("NWBContainer", namespace="core")
+    ns_builder.include_type("Container", namespace="hdmf-common")
+    ns_builder.include_type("DynamicTable", namespace="hdmf-common")
+    ns_builder.include_type("DynamicTableRegion", namespace="hdmf-common")
+    ns_builder.include_type("VectorData", namespace="hdmf-common")
+    ns_builder.include_type("Data", namespace="hdmf-common")
+    ns_builder.include_type("ElementIdentifiers", namespace="hdmf-common")
+    ns_builder.include_type("Device", namespace="core")
+    ns_builder.include_type("TimeIntervals", namespace="core")
 
     # TODO: define your new data types
     # see https://pynwb.readthedocs.io/en/latest/extensions.html#extending-nwb
     # for more information
-    slm = NWBGroupSpec(
-        neurodata_type_def='SpatialLightModulator',
-        neurodata_type_inc='NWBContainer',
-        doc='SpatialLightModulator',
-        attributes=[NWBAttributeSpec('dimensions', 'dimensions ([w, h] or [w, h, d]) of SLM field', 'numeric',
-                                     shape=((2,), (3,)))])
 
-    psd = NWBGroupSpec(neurodata_type_def='PhotostimulationDevice',
-                       neurodata_type_inc='Device',
+    slm = NWBGroupSpec(name='slm', neurodata_type_def='SpatialLightModulator', neurodata_type_inc='Device',
+                       doc='slm',
+                       attributes=[
+                           NWBAttributeSpec('size', 'size of slm', 'numeric', shape=((2,), (3,)), required=False)],
+                       quantity='?')
+
+    psd = NWBGroupSpec(neurodata_type_def='PhotostimulationDevice', neurodata_type_inc='Device',
                        doc=('PhotostimulationDevice'),
                        attributes=[NWBAttributeSpec('type', 'type of stimulation (laser or LED)', 'text'),
-                                   NWBAttributeSpec('wavelength', 'wavelength of photostimulation', 'numeric')],
-                       links=[NWBLinkSpec(doc='slm', target_type='SpatialLightModulator', name='slm name')]
+                                   NWBAttributeSpec('wavelength', 'wavelength of photostimulation', 'numeric',
+                                                    required=False),
+                                   NWBAttributeSpec('opsin', 'opsin used', 'text', required=False),
+                                   NWBAttributeSpec('peak_pulse_power', 'peak pulse power (J)', 'numeric',
+                                                    required=False),
+                                   NWBAttributeSpec('power', 'power (in milliwatts)', 'numeric', required=False),
+                                   NWBAttributeSpec('pulse_rate', 'pulse rate (Hz)', 'numeric', required=False)],
+                       groups=[slm],
+                       # links=[NWBLinkSpec(name='slm', doc='slm', target_type='SpatialLightModulator', quantity='?')],
                        )
+    pixel_roi = NWBDatasetSpec(doc='[n,2] or [n,3] list of coordinates', name='pixel_roi', quantity='?', attributes=[
+        NWBAttributeSpec(name='stimulation_diameter', doc='stimulation_diameter', dtype='numeric', required=False)])
 
-    ip = NWBGroupSpec(neurodata_type_def='ImagingPlane',
-                      neurodata_type_inc='NWBContainer',
-                      doc=('ImagingPlane'),
-                      attributes=[NWBAttributeSpec('opsin', 'opsin used', 'text'),
-                                  NWBAttributeSpec('peak_pulse_power', 'peak pulse power (J)', 'numeric'),
-                                  NWBAttributeSpec('power', 'power (in milliwatts)', 'numeric'),
-                                  NWBAttributeSpec('pulse_rate', 'pulse rate (Hz)', 'numeric')],
-                      links=[NWBLinkSpec(doc='PhotostimulationDevice', target_type='PhotostimulationDevice')]
+    image_mask_roi = NWBDatasetSpec(
+        doc='ROI masks for each ROI. Each image mask is the size of the original imaging plane (or'
+            'volume) and members of the ROI are finite non-zero.', name='image_mask_roi', quantity='?',
+        dims=(('num_rows', 'num_cols'), ('num_rows', 'num_cols', 'depth')),
+        shape=([None] * 2, [None] * 3), dtype='uint8')
+
+    hp = NWBGroupSpec(neurodata_type_def='HolographicPattern', neurodata_type_inc='NWBContainer',
+                      doc=('holographic pattern'),
+                      attributes=[
+                          NWBAttributeSpec('dimension', 'dimension of hp', 'numeric', shape=((2,), (3,)),
+                                           required=False)],
+                      datasets=[pixel_roi, image_mask_roi])
+
+    ps = NWBGroupSpec(neurodata_type_def='PhotostimulationSeries', neurodata_type_inc='TimeSeries',
+                      doc=('PhotostimulationSeries container'),
+                      attributes=[NWBAttributeSpec('format', 'format', 'text', required=False),
+                                  NWBAttributeSpec('stimulus_duration', 'format', 'numeric',
+                                                   required=False),
+                                  NWBAttributeSpec('field_of_view', 'fov', 'numeric',
+                                                   required=False)], groups=[hp], quantity='*')
+
+
+    label_col = NWBDatasetSpec(name='label', dtype='text', doc='Label for each event type.',
+                               neurodata_type_inc='VectorData')
+    # description_col = NWBDatasetSpec(name='stimulus_description', dtype='text', doc='Label for each event type.',
+    #                                  quantity='?', neurodata_type_inc='VectorData')
+
+    stim_col = NWBDatasetSpec(name='photostimulation_series', doc='asdas', neurodata_type_inc='VectorData',
+                              dtype=NWBRefSpec(target_type='PhotostimulationSeries', reftype='object'))
+
+    stim_method = NWBDatasetSpec(name='stimulus_method',
+                                 doc='Scanning or scanless method for shaping optogenetic light (e.g., diffraction limited points, 3D shot, disks, etc.)',
+                                 dtype='text', attributes=[
+            NWBAttributeSpec(name='sweeping_method', doc='format', dtype='text', required=True),
+            NWBAttributeSpec(name='time_per_sweep', doc='format', dtype='numeric', required=False),
+            NWBAttributeSpec(name='num_sweeps', doc='format', dtype='numeric', required=False), ], quantity='?')
+
+    sp = NWBGroupSpec(neurodata_type_def='StimulusPresentation', neurodata_type_inc='TimeIntervals',
+                      doc=(
+                          "Table to hold event timestamps and event metadata relevant to data preprocessing and analysis. Each "
+                          "row corresponds to a different event type. Use the 'event_times' dataset to store timestamps for each "
+                          "event type. Add user-defined columns to add metadata for each event type or event time."),
+                      datasets=[label_col, stim_col],
+                      attributes=[NWBAttributeSpec(name='stimulus_method', doc='format', dtype='text', required=True),
+                                  NWBAttributeSpec(name='sweeping_method', doc='format', dtype='text', required=False),
+                                  NWBAttributeSpec(name='time_per_sweep', doc='format', dtype='numeric',
+                                                   required=False),
+                                  NWBAttributeSpec(name='num_sweeps', doc='format', dtype='numeric', required=False), ],
+                      quantity='?',
+                      links=[NWBLinkSpec(name='photostimulation_device', doc='photostimulation device',
+                                         target_type='PhotostimulationDevice')]
                       )
 
-    pixel_roi = NWBDatasetSpec(doc='[n,2] or [n,3] list of coordinates', name='pixel_roi',
-                               attributes=[
-                                   NWBAttributeSpec(name='stimulation_diameter', doc='stimulation_diameter',
-                                                    dtype='numeric')
-                               ])
-
-    mask_roi = NWBDatasetSpec(doc='mask of region of interest', name='mask_roi')
-
-    hp = NWBGroupSpec(
-        neurodata_type_def='HolographicPattern',
-        neurodata_type_inc='NWBContainer',
-        doc=('holographic pattern'),
-        attributes=[NWBAttributeSpec('dimension', 'dimension', 'numeric', shape=((2,), (3,)))],
-        datasets=[pixel_roi, mask_roi]
-    )
-
-    ps = NWBGroupSpec(
-        neurodata_type_def='PhotostimulationSeries',
-        neurodata_type_inc='TimeSeries',
-        doc=('PhotostimulationSeries container'))
-
-    # TODO: add all of your new data types to this list
-    new_data_types = [slm, psd, ip, hp, ps]
+    new_data_types = [slm, psd, hp, ps, sp]
 
     # export the spec to yaml files in the spec folder
     output_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'spec'))

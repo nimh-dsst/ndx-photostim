@@ -5,12 +5,12 @@ groups:
   doc: slm
   quantity: '?'
   attributes:
-  - name: dimension
+  - name: size
     dtype: numeric
     shape:
     - - 2
     - - 3
-    doc: dimension
+    doc: size of slm
     required: false
 - neurodata_type_def: PhotostimulationDevice
   neurodata_type_inc: Device
@@ -46,12 +46,12 @@ groups:
     doc: slm
     quantity: '?'
     attributes:
-    - name: dimension
+    - name: size
       dtype: numeric
       shape:
       - - 2
       - - 3
-      doc: dimension
+      doc: size of slm
       required: false
 - neurodata_type_def: HolographicPattern
   neurodata_type_inc: NWBContainer
@@ -62,7 +62,7 @@ groups:
     shape:
     - - 2
     - - 3
-    doc: dimension
+    doc: dimension of hp
     required: false
   datasets:
   - name: pixel_roi
@@ -73,7 +73,7 @@ groups:
       dtype: numeric
       doc: stimulation_diameter
       required: false
-  - name: mask_roi
+  - name: image_mask_roi
     dtype: uint8
     dims:
     - - num_rows
@@ -117,7 +117,7 @@ groups:
       shape:
       - - 2
       - - 3
-      doc: dimension
+      doc: dimension of hp
       required: false
     datasets:
     - name: pixel_roi
@@ -128,7 +128,7 @@ groups:
         dtype: numeric
         doc: stimulation_diameter
         required: false
-    - name: mask_roi
+    - name: image_mask_roi
       dtype: uint8
       dims:
       - - num_rows
@@ -173,11 +173,6 @@ groups:
     neurodata_type_inc: VectorData
     dtype: text
     doc: Label for each event type.
-  - name: stimulus_description
-    neurodata_type_inc: VectorData
-    dtype: text
-    doc: Label for each event type.
-    quantity: '?'
   - name: photostimulation_series
     neurodata_type_inc: VectorData
     dtype:
