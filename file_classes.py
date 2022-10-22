@@ -83,17 +83,22 @@ class HolographicPattern(NWBContainer):
     Holographic pattern.
     '''
 
-    __nwbfields__ = ('pixel_roi', 'image_mask_roi', 'stimulation_diameter', 'dimension')
+    __nwbfields__ = ('pixel_roi', 'image_mask_roi', 'ROI_size', 'dimension')
 
     @docval(*get_docval(NWBContainer.__init__) + (
-            {'name': 'pixel_roi', 'type': 'array_data', 'doc': 'pixel_mask ([x1, y1]) or voxel_mask ([x1, y1, z1])', 'default': None, 'shape': ((None, 3), (None, 4))},
+            {'name': 'pixel_roi', 'type': 'array_data', 'doc': 'pixel_mask ([x1, y1]) or voxel_mask ([x1, y1, z1])', 'default': None, 'shape': ((None, 2), (None, 3))},
             {'name': 'image_mask_roi', 'type': 'array_data', 'doc': 'image with the same size of image where positive values mark this ROI', 'default': None, 'shape': ([None]*2, [None]*3)},
-            {'name': 'stimulation_diameter', 'type': (int, float), 'doc': 'diameter of stimulation (pixels)', 'default': None},
+            {'name': 'ROI_size', 'type': (int, float, Iterable), 'doc': 'diameter of stimulation (pixels)', 'default': None},
             {'name': 'dimension', 'type': Iterable, 'doc': 'Number of pixels on x, y, (and z) axes.', 'default': None, 'shape': ((2,), (3,))}
     ))
     def __init__(self, **kwargs):
-        keys_to_set = ("pixel_roi", "image_mask_roi", "stimulation_diameter", "dimension")
+        keys_to_set = ("pixel_roi", "image_mask_roi", "ROI_size", "dimension")
         args_to_set = popargs_to_dict(keys_to_set, kwargs)
+
+        roi_size = args_to_set['ROI_size']
+        if isinstance(roi_size, Iterable):
+            if len(roi_size) != 2 and len(roi_size) != 3:
+                raise ValueError("ROI_size must be a scalar, a 2D iterable, or a 3D iterable")
 
         super().__init__(**kwargs)
 
@@ -104,8 +109,8 @@ class HolographicPattern(NWBContainer):
             args_to_set['dimension'] = tuple(args_to_set['dimension'])
 
         if args_to_set['pixel_roi'] is not None:
-            if args_to_set['stimulation_diameter'] is None:
-                raise TypeError("'stimulation_diameter' must be specified when using a pixel mask")
+            if args_to_set['ROI_size'] is None:
+                raise TypeError("'ROI_size' must be specified when using a pixel mask")
 
             if args_to_set['dimension'] is None:
                 raise TypeError("'dimension' must be specified when using a pixel mask")
@@ -117,12 +122,16 @@ class HolographicPattern(NWBContainer):
             if args_to_set['dimension'] is None:
                 args_to_set['dimension'] = mask_dim
 
-            args_to_set['image_mask_roi'] = self._check_mask(args_to_set['image_mask_roi'])
+            if len(np.setdiff1d(np.unique((args_to_set['image_mask_roi'].astype(int))), np.array([0, 1]))) > 0:
+                    raise ValueError("'image_mask_roi' data must be either -1 (offset) or 1 (onset)")
 
         for key, val in args_to_set.items():
             setattr(self, key, val)
 
     def show_mask(self):
+        if len(self.dimension) == 3:
+            raise ValueError("Cannot display 3D masks")
+
         if self.pixel_roi is not None:
             center_points = [[roi[0], roi[1]] for roi in self.pixel_roi]
             center_points = np.array(center_points)
@@ -137,48 +146,48 @@ class HolographicPattern(NWBContainer):
         plt.axis('off')
         plt.show()
 
+    # @staticmethod
+    # def _create_circular_mask(img_width, img_height, center, diameter, img_depth=None):
+    #
+    #     if img_depth is None:
+    #         X, Y = np.ogrid[:img_width, :img_height]
+    #         dist_from_center = np.sqrt((X - center[0]) ** 2 + (Y - center[1]) ** 2)
+    #     else:
+    #         X, Y, Z = np.ogrid[:img_width, :img_height, :img_depth]
+    #         dist_from_center = np.sqrt((X - center[0]) ** 2 + (Y - center[1]) ** 2 + (Z - center[2]) ** 2)
+    #
+    #     mask = dist_from_center <= diameter/2
+    #     return mask
+
     @staticmethod
-    def _check_mask(mask):
-        """Convert a list/tuple of integer label indices to a numpy array of unsigned integers. Raise error if negative
-                or non-numeric values are found. If something other than a list/tuple/np.ndarray of ints or unsigned ints
-                is provided, return the original array.
-                """
-        if isinstance(mask, (list, tuple)):
-            mask = np.array(mask)
+    def _create_circular_mask(dimensions, center, diameter):
+        Y, X = np.ogrid[:dimensions[1], :dimensions[0]]
+        dist_from_center = np.sqrt((X - center[0]) ** 2 + (Y - center[1]) ** 2)
 
-        if isinstance(mask, np.ndarray):
-            if not np.issubdtype(mask.dtype, np.number):
-                raise ValueError("'data' must be an array of numeric values that have type unsigned int or "
-                                 "can be converted to unsigned int, not type %s" % mask.dtype)
-
-            if (mask < 0).any():
-                raise ValueError("Negative values are not allowed in 'data'.")
-
-            mask = mask.astype(np.uint)
-            diff = np.setdiff1d(np.unique(mask), [0, 1])
-
-            if len(diff) > 0:
-                raise ValueError("Mask contains numbers other than 0 and 1")
+        mask = dist_from_center <= diameter/2
         return mask
 
     @staticmethod
-    def create_circular_mask(h, w, center=None, radius=None):
+    def _create_rectangular_mask(dimensions, center, roi_size, img_depth=None):
 
-        if center is None:  # use the middle of the image
-            center = (int(w / 2), int(h / 2))
-        if radius is None:  # use the smallest distance between the center and image walls
-            radius = min(center[0], center[1], w - center[0], h - center[1])
-
-        Y, X = np.ogrid[:h, :w]
-        dist_from_center = np.sqrt((X - center[0]) ** 2 + (Y - center[1]) ** 2)
-
-        mask = dist_from_center <= radius
+        if img_depth is None:
+            Y, X = np.ogrid[:dimensions[1], :dimensions[0]]
+            X_dist_from_center = (X - center[0])
+            Y_dist_from_center = (Y - center[1])
+            mask = (np.abs(X_dist_from_center) <= roi_size[0] / 2) & (np.abs(Y_dist_from_center) <= roi_size[1] / 2)
         return mask
 
     def pixel_to_image_mask_roi(self):
+        if len(self.dimension) == 3:
+            raise ValueError("Cannot convert 3D pixel_roi to image_mask_roi")
+
         mask = np.zeros(shape=self.dimension)
         for roi in self.pixel_roi:
-            tmp_mask = self.create_circular_mask(self.dimension[0], self.dimension[1], roi, self.stimulation_diameter/2)
+
+            if not isinstance(self.ROI_size, Iterable):
+                tmp_mask = self._create_circular_mask(self.dimension, roi, self.ROI_size)
+            else:
+                tmp_mask = self._create_rectangular_mask(self.dimension, roi, self.ROI_size)
             mask[tmp_mask] = 1
 
         return mask
@@ -203,7 +212,7 @@ class HolographicPatternMap(NWBContainerMapper):
     def __init__(self, spec):
         super().__init__(spec)
         pixel_roi_spec = self.spec.get_dataset('pixel_roi')
-        self.map_spec('stimulation_diameter', pixel_roi_spec.get_attribute('stimulation_diameter'))
+        self.map_spec('ROI_size', pixel_roi_spec.get_attribute('ROI_size'))
 
 @register_class('PhotostimulationSeries', namespace)
 class PhotostimulationSeries(TimeSeries):
@@ -328,7 +337,8 @@ class PhotostimulationSeries(TimeSeries):
             raise ValueError("No data")
 
         if ts is None:
-            end = self.starting_time + self.stimulus_duration * (len(data)-1)
+            # end = self.starting_time + self.stimulus_duration * (len(data)-1)
+            end = self.starting_time + (1/self.rate) * (len(data) - 1)
             ts = np.linspace(self.starting_time, end, num=len(data), endpoint=True)
 
         df_dict = {'data': data, 'timestamps': ts}
@@ -336,7 +346,7 @@ class PhotostimulationSeries(TimeSeries):
         return df
 
     @docval({'name': 'timestamp', 'type': (int, float, Iterable), 'doc': 'The start time of the interval'})
-    def add_presentation(self, **kwargs):
+    def add_onset(self, **kwargs):
         '''
         Add new presentation of stimulus at time 'timestamp', denoting the onset of stimulation from time 'timestamp'
         for a length of self.stimulus_duration.
@@ -430,8 +440,8 @@ class PhotostimulationSeries(TimeSeries):
         return ts_data
 
 
-@register_class('StimulusPresentation', namespace)
-class StimulusPresentation(TimeIntervals):
+@register_class('PhotostimulationTable', namespace)
+class PhotostimulationTable(TimeIntervals):
     """
     Table for storing Epoch data
     """
