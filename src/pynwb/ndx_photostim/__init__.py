@@ -1,23 +1,18 @@
 import os
-from pynwb import load_namespaces, get_class
-from hdmf.utils import docval, get_docval, popargs
-from pynwb import register_class, load_namespaces
 from collections.abc import Iterable
-from pynwb.core import NWBContainer, NWBDataInterface
-from pynwb.device import Device
-from hdmf.utils import docval, popargs, get_docval, get_data_shape #popargs_to_dict
-from pynwb import register_class, load_namespaces
-from pynwb.core import NWBContainer, NWBDataInterface
-from pynwb.base import TimeSeries
-from collections.abc import Iterable
-from pynwb.device import  Device
-from hdmf.utils import docval, popargs, get_docval, popargs_to_dict
-from pynwb.core import DynamicTable, VectorData
+
+import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+from hdmf.common.io.table import DynamicTableMap
 from hdmf.utils import docval, getargs, popargs, popargs_to_dict, get_docval
-import warnings
-
-
+from pynwb import register_class, load_namespaces
+from pynwb import register_map
+from pynwb.base import TimeSeries
+from pynwb.core import DynamicTable
+from pynwb.device import Device
+from pynwb.file import NWBContainer
+from pynwb.io.core import NWBContainerMapper
 
 # Set path of the namespace.yaml file to the expected install location
 ndx_photostim_specpath = os.path.join(
@@ -45,29 +40,6 @@ load_namespaces(ndx_photostim_specpath)
 
 namespace = 'ndx-photostim'
 
-import pandas as pd
-from pynwb import register_class, load_namespaces
-from pynwb.core import NWBContainer, NWBDataInterface
-from pynwb.base import TimeSeries
-from collections.abc import Iterable
-from pynwb.device import  Device
-from hdmf.utils import docval, popargs, get_docval, popargs_to_dict
-from pynwb.core import DynamicTable, VectorData
-import numpy as np
-from hdmf.utils import docval, getargs, popargs, popargs_to_dict, get_docval, call_docval_func
-import warnings
-from pynwb.io.core import NWBContainerMapper
-from pynwb import register_map
-from pynwb.base import TimeSeries, TimeSeriesReferenceVectorData, TimeSeriesReference
-from pynwb.file import MultiContainerInterface, NWBContainer
-from hdmf.build import ObjectMapper
-from hdmf.common.io.table import DynamicTableMap
-import matplotlib.pyplot as plt
-from pynwb import NWBFile
-from pynwb.epoch import  TimeIntervals
-
-ns_path = "test.namespace.yaml"
-load_namespaces(ns_path)
 @register_class('SpatialLightModulator', namespace)
 class SpatialLightModulator(Device):
     """
@@ -128,17 +100,22 @@ class HolographicPattern(NWBContainer):
     Holographic pattern.
     '''
 
-    __nwbfields__ = ('pixel_roi', 'image_mask_roi', 'stimulation_diameter', 'dimension')
+    __nwbfields__ = ('pixel_roi', 'image_mask_roi', 'ROI_size', 'dimension')
 
     @docval(*get_docval(NWBContainer.__init__) + (
-            {'name': 'pixel_roi', 'type': 'array_data', 'doc': 'pixel_mask ([x1, y1]) or voxel_mask ([x1, y1, z1])', 'default': None, 'shape': ((None, 3), (None, 4))},
+            {'name': 'pixel_roi', 'type': 'array_data', 'doc': 'pixel_mask ([x1, y1]) or voxel_mask ([x1, y1, z1])', 'default': None, 'shape': ((None, 2), (None, 3))},
             {'name': 'image_mask_roi', 'type': 'array_data', 'doc': 'image with the same size of image where positive values mark this ROI', 'default': None, 'shape': ([None]*2, [None]*3)},
-            {'name': 'stimulation_diameter', 'type': (int, float), 'doc': 'diameter of stimulation (pixels)', 'default': None},
+            {'name': 'ROI_size', 'type': (int, float, Iterable), 'doc': 'diameter of stimulation (pixels)', 'default': None},
             {'name': 'dimension', 'type': Iterable, 'doc': 'Number of pixels on x, y, (and z) axes.', 'default': None, 'shape': ((2,), (3,))}
     ))
     def __init__(self, **kwargs):
-        keys_to_set = ("pixel_roi", "image_mask_roi", "stimulation_diameter", "dimension")
+        keys_to_set = ("pixel_roi", "image_mask_roi", "ROI_size", "dimension")
         args_to_set = popargs_to_dict(keys_to_set, kwargs)
+
+        roi_size = args_to_set['ROI_size']
+        if isinstance(roi_size, Iterable):
+            if len(roi_size) != 2 and len(roi_size) != 3:
+                raise ValueError("ROI_size must be a scalar, a 2D iterable, or a 3D iterable")
 
         super().__init__(**kwargs)
 
@@ -149,8 +126,8 @@ class HolographicPattern(NWBContainer):
             args_to_set['dimension'] = tuple(args_to_set['dimension'])
 
         if args_to_set['pixel_roi'] is not None:
-            if args_to_set['stimulation_diameter'] is None:
-                raise TypeError("'stimulation_diameter' must be specified when using a pixel mask")
+            if args_to_set['ROI_size'] is None:
+                raise TypeError("'ROI_size' must be specified when using a pixel mask")
 
             if args_to_set['dimension'] is None:
                 raise TypeError("'dimension' must be specified when using a pixel mask")
@@ -162,12 +139,16 @@ class HolographicPattern(NWBContainer):
             if args_to_set['dimension'] is None:
                 args_to_set['dimension'] = mask_dim
 
-            args_to_set['image_mask_roi'] = self._check_mask(args_to_set['image_mask_roi'])
+            if len(np.setdiff1d(np.unique((args_to_set['image_mask_roi'].astype(int))), np.array([0, 1]))) > 0:
+                    raise ValueError("'image_mask_roi' data must be either -1 (offset) or 1 (onset)")
 
         for key, val in args_to_set.items():
             setattr(self, key, val)
 
     def show_mask(self):
+        if len(self.dimension) == 3:
+            raise ValueError("Cannot display 3D masks")
+
         if self.pixel_roi is not None:
             center_points = [[roi[0], roi[1]] for roi in self.pixel_roi]
             center_points = np.array(center_points)
@@ -183,47 +164,34 @@ class HolographicPattern(NWBContainer):
         plt.show()
 
     @staticmethod
-    def _check_mask(mask):
-        """Convert a list/tuple of integer label indices to a numpy array of unsigned integers. Raise error if negative
-                or non-numeric values are found. If something other than a list/tuple/np.ndarray of ints or unsigned ints
-                is provided, return the original array.
-                """
-        if isinstance(mask, (list, tuple)):
-            mask = np.array(mask)
+    def _create_circular_mask(dimensions, center, diameter):
+        Y, X = np.ogrid[:dimensions[1], :dimensions[0]]
+        dist_from_center = np.sqrt((X - center[0]) ** 2 + (Y - center[1]) ** 2)
 
-        if isinstance(mask, np.ndarray):
-            if not np.issubdtype(mask.dtype, np.number):
-                raise ValueError("'data' must be an array of numeric values that have type unsigned int or "
-                                 "can be converted to unsigned int, not type %s" % mask.dtype)
-
-            if (mask < 0).any():
-                raise ValueError("Negative values are not allowed in 'data'.")
-
-            mask = mask.astype(np.uint)
-            diff = np.setdiff1d(np.unique(mask), [0, 1])
-
-            if len(diff) > 0:
-                raise ValueError("Mask contains numbers other than 0 and 1")
+        mask = dist_from_center <= diameter/2
         return mask
 
     @staticmethod
-    def create_circular_mask(h, w, center=None, radius=None):
+    def _create_rectangular_mask(dimensions, center, roi_size, img_depth=None):
 
-        if center is None:  # use the middle of the image
-            center = (int(w / 2), int(h / 2))
-        if radius is None:  # use the smallest distance between the center and image walls
-            radius = min(center[0], center[1], w - center[0], h - center[1])
-
-        Y, X = np.ogrid[:h, :w]
-        dist_from_center = np.sqrt((X - center[0]) ** 2 + (Y - center[1]) ** 2)
-
-        mask = dist_from_center <= radius
+        if img_depth is None:
+            Y, X = np.ogrid[:dimensions[1], :dimensions[0]]
+            X_dist_from_center = (X - center[0])
+            Y_dist_from_center = (Y - center[1])
+            mask = (np.abs(X_dist_from_center) <= roi_size[0] / 2) & (np.abs(Y_dist_from_center) <= roi_size[1] / 2)
         return mask
 
     def pixel_to_image_mask_roi(self):
+        if len(self.dimension) == 3:
+            raise ValueError("Cannot convert 3D pixel_roi to image_mask_roi")
+
         mask = np.zeros(shape=self.dimension)
         for roi in self.pixel_roi:
-            tmp_mask = self.create_circular_mask(self.dimension[0], self.dimension[1], roi, self.stimulation_diameter/2)
+
+            if not isinstance(self.ROI_size, Iterable):
+                tmp_mask = self._create_circular_mask(self.dimension, roi, self.ROI_size)
+            else:
+                tmp_mask = self._create_rectangular_mask(self.dimension, roi, self.ROI_size)
             mask[tmp_mask] = 1
 
         return mask
@@ -248,7 +216,7 @@ class HolographicPatternMap(NWBContainerMapper):
     def __init__(self, spec):
         super().__init__(spec)
         pixel_roi_spec = self.spec.get_dataset('pixel_roi')
-        self.map_spec('stimulation_diameter', pixel_roi_spec.get_attribute('stimulation_diameter'))
+        self.map_spec('ROI_size', pixel_roi_spec.get_attribute('ROI_size'))
 
 @register_class('PhotostimulationSeries', namespace)
 class PhotostimulationSeries(TimeSeries):
@@ -257,11 +225,11 @@ class PhotostimulationSeries(TimeSeries):
 
     @docval(*get_docval(TimeSeries.__init__, 'name'),
             {'name': 'data', 'type': ('array_data', 'data', TimeSeries), 'shape': (None,),
-             'doc': 'The data values over time. Must be 1D.', 'default': None},
-            {'name': 'timestamps', 'type': ('array_data', 'data', TimeSeries), 'shape': (None,),
+             'doc': 'The data values over time. Must be 1D.', 'default': list()},
+            {'name': 'timestamps', 'type': ('array_data', 'data', TimeSeries, Iterable), 'shape': (None,),
              'doc': 'Timestamps corresponding to data.', 'default': None},
             {'name': 'holographic_pattern', 'type': HolographicPattern, 'doc': 'photostimulation pattern'},
-            {'name': 'format', 'type': str, 'doc': 'name', 'default': 'interval'},
+            {'name': 'format', 'type': str, 'doc': 'name', 'enum': ["interval", "series"]},
              {'name': 'stimulus_duration', 'type': (int, float), 'doc': 'name', 'default': None},
              {'name': 'field_of_view', 'type': (int, float), 'doc': 'diameter of stimulation (pixels)', 'default': None},
             {'name': 'unit', 'type': str, 'doc': 'unit of time', 'default': 'seconds'},
@@ -269,41 +237,36 @@ class PhotostimulationSeries(TimeSeries):
                         'comments', 'description', 'control', 'control_description', 'offset')
     )
     def __init__(self, **kwargs):
-        self.__interval_data = kwargs['data']
-        self.__interval_timestamps = kwargs['timestamps']
-
-        kwargs['format'] = kwargs['format'].lower()
-        if kwargs['format'] not in ['interval', 'series']:
-            raise ValueError("'format' must be one of 'interval' or 'series'")
-
         # Convert data to np array
-        if isinstance(kwargs['data'], (list, tuple)):
-            kwargs['data'] = np.array(kwargs['data'])
-
+        if isinstance(kwargs['data'], np.ndarray):
+            kwargs['data'] = list(kwargs['data'])
+        #
         if isinstance(kwargs['timestamps'], (list, tuple)):
-            kwargs['timestamps'] = np.array(kwargs['timestamps'])
-
+            kwargs['timestamps'] = list(kwargs['timestamps'])
 
         # If using interval format...
         if kwargs['format'] == 'interval':
-            if kwargs['data'] is None:
-                kwargs['data'] = np.array([])
+            if len(kwargs['data']) == 0:
+                # kwargs['data'] = np.array([])
 
                 if kwargs['timestamps'] is not None:
                     raise ValueError("'timestamps' can't be specified without corresponding 'data'")
-
-                kwargs['timestamps'] = np.array([])
+                kwargs['timestamps'] = []
+                # kwargs['timestamps'] = np.array([])
             # if intervals are input, check that formatted correctly
             else:
                 # check that timestamps are also input
                 if kwargs['timestamps'] is None:
                     raise ValueError("Need to specify corresponding 'timestamps' for each entry in 'data'")
 
+                # print(kwargs['data'], kwargs['timestamps'])
+
                 # check data and timestamps are same length
                 if len(kwargs['data']) != len(kwargs['timestamps']):
                     raise ValueError("'data' and 'timestamps' need to be the same length")
 
-                if len(np.setdiff1d(np.unique((kwargs['data'].astype(int))), np.array([-1, 1]))) > 0:
+                data_int_array = np.array(kwargs['data']).astype(int)
+                if len(np.setdiff1d(np.unique(data_int_array), np.array([-1, 1]))) > 0:
                     raise ValueError("'interval' data must be either -1 (offset) or 1 (onset)")
 
         # if using series format
@@ -311,13 +274,15 @@ class PhotostimulationSeries(TimeSeries):
             if kwargs['stimulus_duration'] is None:
                 raise ValueError("if 'format' is 'series', 'stimulus_duration' must be specified")
 
-            if kwargs['data'] is None:
-                kwargs['data'] = np.array([])
+            if len(kwargs['data']) == 0:
+                # kwargs['data'] = np.array([])
 
                 if kwargs['timestamps'] is not None:
                     raise ValueError("'timestamps' can't be specified without corresponding 'data'")
 
-                kwargs['timestamps'] = np.array([])
+                if kwargs['rate'] is None:
+                    kwargs['timestamps'] = []
+                # kwargs['timestamps'] = np.array([])
             else:
                 if kwargs['timestamps'] is None and kwargs['rate'] is None:
                     raise ValueError("either 'timestamps' or 'rate' must be specified")
@@ -327,25 +292,25 @@ class PhotostimulationSeries(TimeSeries):
                 if len(kwargs['data']) != len(kwargs['timestamps']):
                     raise ValueError("'data' and 'timestamps' need to be the same length")
 
-                if len(np.setdiff1d(np.unique((kwargs['data'].astype(int))), np.array([0, 1]))) > 0:
+                data_int_array = np.array(kwargs['data']).astype(int)
+                if len(np.setdiff1d(np.unique(data_int_array), np.array([0, 1]))) > 0:
                     raise ValueError("'series' data must be either 0 or 1")
 
         keys_to_set = ('holographic_pattern',  'format', 'stimulus_duration', 'field_of_view')
         args_to_set = popargs_to_dict(keys_to_set, kwargs)
 
-        self.__interval_data = kwargs['data']
-        self.__interval_timestamps = kwargs['timestamps']
+        data, timestamps = popargs('data', 'timestamps', kwargs)
+        self.__interval_data = data
+        self.__interval_timestamps = timestamps
         kwargs['unit'] = 'seconds'
 
-        super().__init__(**kwargs)
+        super().__init__(data=data, timestamps=timestamps, **kwargs)
 
         for key, val in args_to_set.items():
             setattr(self, key, val)
 
-        self.__interval_timestamps = self.timestamps
-        self.__interval_data = self.data
-
-
+        # self.__interval_timestamps = self.timestamps
+        # self.__interval_data = self.data
 
     @docval({'name': 'start', 'type': (int, float), 'doc': 'The start time of the interval'},
             {'name': 'stop', 'type': (int, float), 'doc': 'The stop time of the interval'})
@@ -357,31 +322,59 @@ class PhotostimulationSeries(TimeSeries):
         if self.format == 'series':
             raise ValueError("Cannot add interval to PhotostimulationSeries with 'format' of 'series'")
 
-        self.__interval_data = np.append(self.__interval_data, 1)
-        self.__interval_data = np.append(self.__interval_data, -1)
-        self.__interval_timestamps = np.append(self.__interval_timestamps, start)
-        self.__interval_timestamps = np.append(self.__interval_timestamps, stop)
+        self.__interval_data.append(1)
+        self.__interval_data.append(-1)
+        self.__interval_timestamps.append(start)
+        self.__interval_timestamps.append(stop)
+
+    def _get_start_stop_list(self):
+        '''
+        Get list of tuples with format (start_time, stop_time) for the onset/offset of stimulus over timeseries
+        '''
+        df = self.to_dataframe()
+
+        start_stop = []
+        if self.format == 'interval':
+            start_times = list(df[df['data'] == 1]['timestamps'])
+            end_times = list(df[df['data'] == -1]['timestamps'])
+
+            if len(start_times) != len(end_times):
+                raise ValueError("Number of starts does not equal number of stops!")
+
+            for start, end in zip(start_times, end_times):
+                start_stop.append((start, end))
+
+        if self.format == 'series':
+            start_times = list(df[df['data'] == 1]['timestamps'])
+
+            for start in start_times:
+                start_stop.append((start, start+self.stimulus_duration))
+        return start_stop
+
 
     def to_dataframe(self):
         '''
 
         '''
-        data = self.data
-        ts = self.timestamps
+        data = np.array(self.data)
+        ts = np.array(self.timestamps)
 
         if len(data) == 0:
             raise ValueError("No data")
 
-        if ts is None:
-            end = self.starting_time + self.stimulus_duration * (len(data)-1)
+        if self.timestamps is None:
+            # end = self.starting_time + self.stimulus_duration * (len(data)-1)
+            end = self.starting_time + (1/self.rate) * (len(data) - 1)
             ts = np.linspace(self.starting_time, end, num=len(data), endpoint=True)
 
         df_dict = {'data': data, 'timestamps': ts}
         df = pd.DataFrame(df_dict)
         return df
 
+
+
     @docval({'name': 'timestamp', 'type': (int, float, Iterable), 'doc': 'The start time of the interval'})
-    def add_presentation(self, **kwargs):
+    def add_onset(self, **kwargs):
         '''
         Add new presentation of stimulus at time 'timestamp', denoting the onset of stimulation from time 'timestamp'
         for a length of self.stimulus_duration.
@@ -398,8 +391,8 @@ class PhotostimulationSeries(TimeSeries):
             if self.format == 'interval':
                 self.add_interval(ts, ts+self.stimulus_duration)
             else:
-                self.__interval_data = np.append(self.__interval_data, 1)
-                self.__interval_timestamps = np.append(self.__interval_timestamps, ts)
+                self.__interval_data.append(1)
+                self.__interval_timestamps.append(ts)
 
 
     def get_starting_time(self):
@@ -432,51 +425,8 @@ class PhotostimulationSeries(TimeSeries):
     def timestamps(self):
         return self.__interval_timestamps
 
-    @staticmethod
-    def _format_data_series(ts_data):
-        """Convert a list/tuple of integer label indices to a numpy array of unsigned integers. Raise error if negative
-                or non-numeric values are found. If something other than a list/tuple/np.ndarray of ints or unsigned ints
-                is provided, return the original array.
-                """
-
-        if ts_data is None or len(ts_data) == 0:
-            return ts_data
-
-        if isinstance(ts_data, (list, tuple)):
-            ts_data = np.array(ts_data)
-
-        ts_data = ts_data.astype(np.int8)
-        diff = np.setdiff1d(np.unique(ts_data), [0, 1])
-
-        if len(diff) > 0:
-            raise ValueError("'Series' data must be either -1 (offset) or 1 (onset)")
-
-        return ts_data
-
-    @staticmethod
-    def _format_data_interval(ts_data):
-        """Convert a list/tuple of integer label indices to a numpy array of unsigned integers. Raise error if negative
-                or non-numeric values are found. If something other than a list/tuple/np.ndarray of ints or unsigned ints
-                is provided, return the original array.
-                """
-
-        if ts_data is None or len(ts_data) == 0:
-            return ts_data
-
-        if isinstance(ts_data, (list, tuple)):
-            ts_data = np.array(ts_data)
-
-        ts_data = ts_data.astype(np.int8)
-        diff = np.setdiff1d(np.unique(ts_data), [-1, 1])
-
-        if len(diff) > 0:
-            raise ValueError("'Interval' data must be either -1 (offset) or 1 (onset)")
-
-        return ts_data
-
-
-@register_class('StimulusPresentation', namespace)
-class StimulusPresentation(TimeIntervals):
+@register_class('PhotostimulationTable', namespace)
+class PhotostimulationTable(DynamicTable):
     """
     Table for storing Epoch data
     """
@@ -485,25 +435,31 @@ class StimulusPresentation(TimeIntervals):
     # __fields__ = ({'name': 'photostimulation_device', 'child': True}, "stimulus_method", "sweeping_method", "time_per_sweep", "num_sweeps")
 
     __columns__ = (
-        {'name': 'label', 'description': 'Start time of epoch, in seconds', 'required': True},
-        {'name': 'start_time', 'description': 'Stop time of epoch, in seconds', 'required': True},
-        {'name': 'stop_time', 'description': 'Stop time of epoch, in seconds', 'required': True},
+        {'name': 'row', 'description': 'Name of row', 'required': True},
         {'name': 'series_name', 'description': 'Stop time of epoch, in seconds', 'required': True},
+        {'name': 'series_format', 'description': 'Stop time of epoch, in seconds', 'required': True},
+        {'name': 'num_samples', 'description': 'Stop time of epoch, in seconds', 'required': True},
+        {'name': 'start_time', 'description': 'Stop time of epoch, in seconds', 'required': True},
+         {'name': 'stop_time', 'description': 'Stop time of epoch, in seconds', 'required': True},
         {'name': 'pattern_name', 'description': 'Stop time of epoch, in seconds', 'required': True},
         {'name': 'photostimulation_series', 'description': 'Stop time of epoch, in seconds', 'required': True},
     )
 
-    @docval(*get_docval(TimeIntervals.__init__),
-            # {'name': 'name', 'type': str, 'doc': 'name of this TimeIntervals'},  # required
-            # {'name': 'description', 'type': str, 'doc': 'Description of this TimeIntervals'},
+    @docval(#*get_docval(DynamicTable.__init__),
+            {'name': 'name', 'type': str, 'doc': 'name of this TimeIntervals'},  # required
+            {'name': 'description', 'type': str, 'doc': 'Description of this TimeIntervals'},
             {'name': 'photostimulation_device', 'type': PhotostimulationDevice, 'doc': 'photostimulation device', 'default': None},
             {'name': 'stimulus_method', 'type': str, 'doc': 'Description of this TimeIntervals', 'default': None},
             {'name': 'sweeping_method', 'type': str, 'doc': 'Description of this TimeIntervals', 'default': None},
             {'name': 'time_per_sweep', 'type': (int, float), 'doc': 'Description of this TimeIntervals', 'default': None},
             {'name': 'num_sweeps', 'type': (int, float), 'doc': 'Description of this TimeIntervals', 'default': None},
-            # *get_docval(DynamicTable.__init__, 'id', 'columns', 'colnames')
+            *get_docval(DynamicTable.__init__, 'id', 'columns', 'colnames')
             )
     def __init__(self, **kwargs):
+        if kwargs['sweeping_method'] is not None:
+            if kwargs['stimulus_method'] is None:
+                raise ValueError("If 'sweeping_method' must be defined to use 'stimulus_method''")
+
         keys_to_set = ("photostimulation_device", "stimulus_method", "sweeping_method", "time_per_sweep", "num_sweeps")
         # keys_to_set = ( "stimulus_method", "sweeping_method", "time_per_sweep", "num_sweeps")
         args_to_set = popargs_to_dict(keys_to_set, kwargs)
@@ -523,20 +479,67 @@ class StimulusPresentation(TimeIntervals):
     #         allow_extra=True
     # )
 
-
-    def add_series(self, photostimulation_series, **kwargs):
+    @docval({'name': 'series', 'type': (PhotostimulationSeries, Iterable), 'doc': 'Series to add to table.'},
+            {'name': 'row_name', 'type': (str, Iterable), 'doc': 'Names of each row.', 'default': None},
+            allow_extra=True)
+    def add_series(self, **kwargs):
         """Add an event type as a row to this table."""
 
-        if not isinstance(photostimulation_series, Iterable):
-            photostimulation_series = [photostimulation_series]
+        series_list = kwargs['series']
+        if not isinstance(series_list, Iterable):
+            series_list = [series_list]
 
-        for i, series in enumerate(photostimulation_series):
+        row_names_list = kwargs['row_name']
+        if row_names_list is None:
+            row_names_list = []
+
+            for i in range(len(series_list)):
+                row_names_list.append(f"series_{i}")
+        else:
+            if not isinstance(row_names_list, Iterable):
+                row_names_list = [row_names_list]
+
+            if len(row_names_list) != len(series_list):
+                raise ValueError("'series' and 'row_name' must be the same length")
+
+        for series, name in zip(series_list, row_names_list):
             new_args = {}
-            new_args['label'] = f"series_{i}"
+            new_args['row'] = name
             new_args['series_name'] = series.name
+
+            if len(series.data) == 0:
+                raise ValueError(f"Series {series.name} has no data! Cannot add to PhotostimulationTable")
+            new_args['series_format'] = series.format
+            new_args['num_samples'] = series.num_samples
             new_args['start_time'] = float(series.get_starting_time())
             new_args['stop_time'] = float(series.get_end_time())
             new_args['pattern_name'] = series.holographic_pattern.name
             new_args['photostimulation_series'] = series
-            super().add_interval(**new_args)
+            super().add_row(**new_args)
 
+    def plot(self):
+        fig, ax = plt.subplots()
+
+        y_ticks = []
+        for i, series in enumerate(self.photostimulation_series):
+            start_stop_list = series._get_start_stop_list()
+            ax.broken_barh(start_stop_list, ((i+1)*10, 8))
+            y_ticks.append((i+1)*10+4)
+
+        ax.set_yticks(y_ticks, labels=self.series_name)
+        ax.set_xlabel('Timestamp (seconds)')
+        ax.set_title(f"Presentation timestamps for PhotostimulationTable '{self.name}'")
+        ax.xaxis.grid()
+        plt.show()
+
+
+@register_map(PhotostimulationTable)
+class PhotostimulationTableMap(DynamicTableMap):
+
+    def __init__(self, spec):
+        super().__init__(spec)
+        stim_method_spec = self.spec.get_dataset('stimulus_method')
+        # self.map_spec('stim_method', stim_method_spec)
+        self.map_spec('sweeping_method', stim_method_spec.get_attribute('sweeping_method'))
+        self.map_spec('time_per_sweep', stim_method_spec.get_attribute('time_per_sweep'))
+        self.map_spec('num_sweeps', stim_method_spec.get_attribute('num_sweeps'))

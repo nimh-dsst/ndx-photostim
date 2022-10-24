@@ -72,10 +72,6 @@ ps = NWBGroupSpec(neurodata_type_def='PhotostimulationSeries', neurodata_type_in
 
 ns_builder.add_spec(ext_source, ps)
 
-label_col = NWBDatasetSpec(name='label', dtype='text', doc='Row label', neurodata_type_inc='VectorData')
-# description_col = NWBDatasetSpec(name='stimulus_description', dtype='text', doc='Label for each event type.',
-#                                  quantity='?', neurodata_type_inc='VectorData')
-
 stim_col = NWBDatasetSpec(name='photostimulation_series', doc='asdas', neurodata_type_inc='VectorData',
                           dtype=NWBRefSpec(target_type='PhotostimulationSeries', reftype='object'))
 

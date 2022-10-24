@@ -10,7 +10,7 @@ from pynwb import register_class, load_namespaces
 from pynwb import register_map
 
 from pynwb.image import GrayscaleImage
-from file_classes import SpatialLightModulator, PhotostimulationDevice, HolographicPattern, PhotostimulationSeries, PhotostimulationTable
+# from file_classes import SpatialLightModulator, PhotostimulationDevice, HolographicPattern, PhotostimulationSeries, PhotostimulationTable
 import matplotlib.pyplot as plt
 import os
 from hdmf.build import ObjectMapper

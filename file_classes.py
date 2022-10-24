@@ -24,6 +24,8 @@ ns_path = "test.namespace.yaml"
 load_namespaces(ns_path)
 
 namespace = 'test'
+
+
 @register_class('SpatialLightModulator', namespace)
 class SpatialLightModulator(Device):
     """
@@ -466,18 +468,9 @@ class PhotostimulationTable(DynamicTable):
         for key, val in args_to_set.items():
             setattr(self, key, val)
 
-    # @docval(*get_docval(TimeIntervals.add_interval),
-    #     {'name': 'label', 'type': str, 'doc': 'name of this TimeIntervals', 'default': None},
-    #         {'name': 'stimulus_description', 'type': (str, list), 'doc': 'name of this TimeIntervals', 'default':''},
-    #         # {'name': 'start', 'type': (int, float), 'doc': 'name of this TimeIntervals', 'default': None},
-    #         # {'name': 'end', 'type': (int, float), 'doc': 'name of this TimeIntervals', 'default': None},
-    #         {'name': 'photostimulation_series', 'type': PhotostimulationSeries, 'doc': 'name of this TimeIntervals'},
-    #         {'name': 'holographic_pattern', 'type':  HolographicPattern, 'doc': 'name of this TimeIntervals'},
-    #         allow_extra=True
-    # )
-
     @docval({'name': 'series', 'type': (PhotostimulationSeries, Iterable), 'doc': 'Series to add to table.'},
-            {'name': 'row_name', 'type': (str, Iterable), 'doc': 'Names of each row.', 'default': None})
+            {'name': 'row_name', 'type': (str, Iterable), 'doc': 'Names of each row.', 'default': None},
+            allow_extra=True)
     def add_series(self, **kwargs):
         """Add an event type as a row to this table."""
 

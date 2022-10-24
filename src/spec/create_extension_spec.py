@@ -42,8 +42,10 @@ def main():
     # for more information
 
     slm = NWBGroupSpec(neurodata_type_def='SpatialLightModulator', neurodata_type_inc='Device', name='slm',
-                       doc='slm',quantity='?',
-                       attributes=[NWBAttributeSpec('size', 'size of slm', 'numeric', shape=((2,), (3,)), required=False)])
+                       doc='slm', quantity='?',
+                       attributes=[NWBAttributeSpec('size', 'size of slm', 'numeric', shape=((2,), (3,)),
+                                                    dims=(('num_rows', 'num_cols'), ('num_rows', 'num_cols', 'depth')),
+                                                    required=False)])
 
     psd = NWBGroupSpec(neurodata_type_def='PhotostimulationDevice', neurodata_type_inc='Device',
                        doc=('PhotostimulationDevice'),
@@ -56,8 +58,13 @@ def main():
                                    NWBAttributeSpec('power', 'power (in milliwatts)', 'numeric', required=False),
                                    NWBAttributeSpec('pulse_rate', 'pulse rate (Hz)', 'numeric', required=False)],
                        groups=[slm])
-    pixel_roi = NWBDatasetSpec(name='pixel_roi', doc='[n,2] or [n,3] list of coordinates',  shape=([None] * 2, [None] * 3), quantity='?',
-                               attributes=[NWBAttributeSpec(name='ROI_size', doc='size of ROI', dtype='numeric', required=False)])
+
+    pixel_roi = NWBDatasetSpec(name='pixel_roi', doc='[n,2] or [n,3] list of coordinates',
+                               shape=([None] * 2, [None] * 3),
+                               quantity='?',
+                               attributes=[
+                                   NWBAttributeSpec(name='ROI_size', doc='size of ROI', dtype='numeric',
+                                                    required=False)])
 
     image_mask_roi = NWBDatasetSpec(
         doc='ROI masks for each ROI. Each image mask is the size of the original imaging plane (or'
@@ -74,17 +81,14 @@ def main():
 
     ps = NWBGroupSpec(neurodata_type_def='PhotostimulationSeries', neurodata_type_inc='TimeSeries',
                       doc=('PhotostimulationSeries container'),
-                      attributes=[NWBAttributeSpec('format', 'format', 'text', required=False),
-                                  NWBAttributeSpec('stimulus_duration', 'format', 'numeric',
-                                                   required=False),
-                                  NWBAttributeSpec('field_of_view', 'fov', 'numeric',
-                                                   required=False)], groups=[hp], quantity='*')
-
-
-    label_col = NWBDatasetSpec(name='label', dtype='text', doc='Label for each event type.',
-                               neurodata_type_inc='VectorData')
-    # description_col = NWBDatasetSpec(name='stimulus_description', dtype='text', doc='Label for each event type.',
-    #                                  quantity='?', neurodata_type_inc='VectorData')
+                      attributes=[NWBAttributeSpec('format', 'format', 'text', required=True),
+                                  NWBAttributeSpec('stimulus_duration', 'format', 'numeric', required=False),
+                                  NWBAttributeSpec('field_of_view', 'fov', 'numeric', required=False)],
+                      # links=[NWBLinkSpec(name='holographic_pattern', doc='photostimulation device',
+                      #                    target_type='HolographicPattern')],
+                      # datasets=[NWBDatasetSpec(name='timestamps', doc=('time stamps'))],
+                      groups=[hp],
+                      quantity='*')
 
     stim_col = NWBDatasetSpec(name='photostimulation_series', doc='asdas', neurodata_type_inc='VectorData',
                               dtype=NWBRefSpec(target_type='PhotostimulationSeries', reftype='object'))
@@ -101,18 +105,13 @@ def main():
                           "Table to hold event timestamps and event metadata relevant to data preprocessing and analysis. Each "
                           "row corresponds to a different event type. Use the 'event_times' dataset to store timestamps for each "
                           "event type. Add user-defined columns to add metadata for each event type or event time."),
-                      datasets=[label_col, stim_col],
-                      attributes=[NWBAttributeSpec(name='stimulus_method', doc='format', dtype='text', required=True),
-                                  NWBAttributeSpec(name='sweeping_method', doc='format', dtype='text', required=False),
-                                  NWBAttributeSpec(name='time_per_sweep', doc='format', dtype='numeric',
-                                                   required=False),
-                                  NWBAttributeSpec(name='num_sweeps', doc='format', dtype='numeric', required=False), ],
+                      datasets=[stim_col, stim_method],
                       quantity='?',
                       links=[NWBLinkSpec(name='photostimulation_device', doc='photostimulation device',
                                          target_type='PhotostimulationDevice')]
                       )
 
-    new_data_types = [slm, psd, hp, ps, sp]
+    new_data_types = [slm, psd, ps, sp]
 
     # export the spec to yaml files in the spec folder
     output_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'spec'))
