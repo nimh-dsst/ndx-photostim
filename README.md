@@ -33,12 +33,15 @@ This will generate documents, stored in `/docs/build`.
 
 ## Usage
 
+**For full example usage, see `tutorial.ipynb`**
+
 Below is example code to:
 1. Create a device used in photostimulation
 2. Simulate and store photostimulation ROIs
 3. Store the time series corresponding to each stimulation
 4. Record all time series and patterns used in an experiment in a table
 5. Write the above to an NWB file and read it back
+
 
 ```python
 # create an example NWB file
