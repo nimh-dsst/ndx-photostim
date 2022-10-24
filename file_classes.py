@@ -222,7 +222,7 @@ class PhotostimulationSeries(TimeSeries):
 
     @docval(*get_docval(TimeSeries.__init__, 'name'),
             {'name': 'data', 'type': ('array_data', 'data', TimeSeries), 'shape': (None,),
-             'doc': 'The data values over time. Must be 1D.', 'default': None},
+             'doc': 'The data values over time. Must be 1D.', 'default': list()},
             {'name': 'timestamps', 'type': ('array_data', 'data', TimeSeries, Iterable), 'shape': (None,),
              'doc': 'Timestamps corresponding to data.', 'default': None},
             {'name': 'holographic_pattern', 'type': HolographicPattern, 'doc': 'photostimulation pattern'},
@@ -234,37 +234,36 @@ class PhotostimulationSeries(TimeSeries):
                         'comments', 'description', 'control', 'control_description', 'offset')
     )
     def __init__(self, **kwargs):
-        self.__interval_data = kwargs['data']
-        self.__interval_timestamps = kwargs['timestamps']
-
         # Convert data to np array
-        if isinstance(kwargs['data'], (list, tuple)):
-            kwargs['data'] = np.array(kwargs['data'])
-
+        if isinstance(kwargs['data'], np.ndarray):
+            kwargs['data'] = list(kwargs['data'])
+        #
         if isinstance(kwargs['timestamps'], (list, tuple)):
-            kwargs['timestamps'] = np.array(kwargs['timestamps'])
+            kwargs['timestamps'] = list(kwargs['timestamps'])
 
         # If using interval format...
         if kwargs['format'] == 'interval':
-            if kwargs['data'] is None:
-                kwargs['data'] = np.array([])
+            if len(kwargs['data']) == 0:
+                # kwargs['data'] = np.array([])
 
                 if kwargs['timestamps'] is not None:
                     raise ValueError("'timestamps' can't be specified without corresponding 'data'")
-
-                kwargs['timestamps'] = np.array([])
+                kwargs['timestamps'] = []
+                # kwargs['timestamps'] = np.array([])
             # if intervals are input, check that formatted correctly
             else:
                 # check that timestamps are also input
                 if kwargs['timestamps'] is None:
                     raise ValueError("Need to specify corresponding 'timestamps' for each entry in 'data'")
 
-                print(kwargs['data'], kwargs['timestamps'])
+                # print(kwargs['data'], kwargs['timestamps'])
+
                 # check data and timestamps are same length
                 if len(kwargs['data']) != len(kwargs['timestamps']):
                     raise ValueError("'data' and 'timestamps' need to be the same length")
 
-                if len(np.setdiff1d(np.unique((kwargs['data'].astype(int))), np.array([-1, 1]))) > 0:
+                data_int_array = np.array(kwargs['data']).astype(int)
+                if len(np.setdiff1d(np.unique(data_int_array), np.array([-1, 1]))) > 0:
                     raise ValueError("'interval' data must be either -1 (offset) or 1 (onset)")
 
         # if using series format
@@ -272,13 +271,15 @@ class PhotostimulationSeries(TimeSeries):
             if kwargs['stimulus_duration'] is None:
                 raise ValueError("if 'format' is 'series', 'stimulus_duration' must be specified")
 
-            if kwargs['data'] is None:
-                kwargs['data'] = np.array([])
+            if len(kwargs['data']) == 0:
+                # kwargs['data'] = np.array([])
 
                 if kwargs['timestamps'] is not None:
                     raise ValueError("'timestamps' can't be specified without corresponding 'data'")
 
-                kwargs['timestamps'] = np.array([])
+                if kwargs['rate'] is None:
+                    kwargs['timestamps'] = []
+                # kwargs['timestamps'] = np.array([])
             else:
                 if kwargs['timestamps'] is None and kwargs['rate'] is None:
                     raise ValueError("either 'timestamps' or 'rate' must be specified")
@@ -288,23 +289,25 @@ class PhotostimulationSeries(TimeSeries):
                 if len(kwargs['data']) != len(kwargs['timestamps']):
                     raise ValueError("'data' and 'timestamps' need to be the same length")
 
-                if len(np.setdiff1d(np.unique((kwargs['data'].astype(int))), np.array([0, 1]))) > 0:
+                data_int_array = np.array(kwargs['data']).astype(int)
+                if len(np.setdiff1d(np.unique(data_int_array), np.array([0, 1]))) > 0:
                     raise ValueError("'series' data must be either 0 or 1")
 
         keys_to_set = ('holographic_pattern',  'format', 'stimulus_duration', 'field_of_view')
         args_to_set = popargs_to_dict(keys_to_set, kwargs)
 
-        self.__interval_data = kwargs['data']
-        self.__interval_timestamps = kwargs['timestamps']
+        data, timestamps = popargs('data', 'timestamps', kwargs)
+        self.__interval_data = data
+        self.__interval_timestamps = timestamps
         kwargs['unit'] = 'seconds'
 
-        super().__init__(**kwargs)
+        super().__init__(data=data, timestamps=timestamps, **kwargs)
 
         for key, val in args_to_set.items():
             setattr(self, key, val)
 
-        self.__interval_timestamps = self.timestamps
-        self.__interval_data = self.data
+        # self.__interval_timestamps = self.timestamps
+        # self.__interval_data = self.data
 
     @docval({'name': 'start', 'type': (int, float), 'doc': 'The start time of the interval'},
             {'name': 'stop', 'type': (int, float), 'doc': 'The stop time of the interval'})
@@ -316,10 +319,10 @@ class PhotostimulationSeries(TimeSeries):
         if self.format == 'series':
             raise ValueError("Cannot add interval to PhotostimulationSeries with 'format' of 'series'")
 
-        self.__interval_data = np.append(self.__interval_data, 1)
-        self.__interval_data = np.append(self.__interval_data, -1)
-        self.__interval_timestamps = np.append(self.__interval_timestamps, start)
-        self.__interval_timestamps = np.append(self.__interval_timestamps, stop)
+        self.__interval_data.append(1)
+        self.__interval_data.append(-1)
+        self.__interval_timestamps.append(start)
+        self.__interval_timestamps.append(stop)
 
     def _get_start_stop_list(self):
         '''
@@ -350,13 +353,13 @@ class PhotostimulationSeries(TimeSeries):
         '''
 
         '''
-        data = self.data
-        ts = self.timestamps
+        data = np.array(self.data)
+        ts = np.array(self.timestamps)
 
         if len(data) == 0:
             raise ValueError("No data")
 
-        if ts is None:
+        if self.timestamps is None:
             # end = self.starting_time + self.stimulus_duration * (len(data)-1)
             end = self.starting_time + (1/self.rate) * (len(data) - 1)
             ts = np.linspace(self.starting_time, end, num=len(data), endpoint=True)
@@ -385,8 +388,8 @@ class PhotostimulationSeries(TimeSeries):
             if self.format == 'interval':
                 self.add_interval(ts, ts+self.stimulus_duration)
             else:
-                self.__interval_data = np.append(self.__interval_data, 1)
-                self.__interval_timestamps = np.append(self.__interval_timestamps, ts)
+                self.__interval_data.append(1)
+                self.__interval_timestamps.append(ts)
 
 
     def get_starting_time(self):
@@ -418,8 +421,6 @@ class PhotostimulationSeries(TimeSeries):
     @property
     def timestamps(self):
         return self.__interval_timestamps
-
-
 
 @register_class('PhotostimulationTable', namespace)
 class PhotostimulationTable(DynamicTable):

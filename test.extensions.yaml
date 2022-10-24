@@ -81,9 +81,6 @@ groups:
     dtype: numeric
     doc: fov
     required: false
-  datasets:
-  - name: timestamps
-    doc: time stamps
   groups:
   - neurodata_type_def: HolographicPattern
     neurodata_type_inc: NWBContainer

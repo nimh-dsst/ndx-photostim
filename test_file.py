@@ -202,22 +202,26 @@ class TestPhotostimulationSeries(TestCase):
 
     def test_add_interval(self):
         hp = get_holographic_pattern()
+        #
+        # empty_series = PhotostimulationSeries(name="photosim series", holographic_pattern=hp, format='interval')
+        # empty_series.add_interval(10, 20)
+        # empty_series.add_interval(30, 40)
+        # assert empty_series.data[0] == 1
+        # assert empty_series.data[3] == -1
+        # assert len(empty_series.data) == 4
+        #
+        # assert empty_series.timestamps[0] == 10
+        # assert empty_series.timestamps[1] == 20
+        # assert len(empty_series.timestamps) == 4
 
-        empty_series = PhotostimulationSeries(name="photosim series", holographic_pattern=hp, format='interval')
-        empty_series.add_interval(10, 20)
-        empty_series.add_interval(30, 40)
-        assert empty_series.data[0] == 1
-        assert empty_series.data[3] == -1
-        assert len(empty_series.data) == 4
-
-        assert empty_series.timestamps[0] == 10
-        assert empty_series.timestamps[1] == 20
-        assert len(empty_series.timestamps) == 4
+        stim_series_2 = PhotostimulationSeries(name="series 2", format='interval',  holographic_pattern=hp)
+        stim_series_2.add_interval(10., 20.)
+        stim_series_2.add_interval(35., 40.)
 
         import os
         os.remove("basics_tutorial.h5")
         with NWBHDF5IO("basics_tutorial.h5", "w") as io:
-            io.write(empty_series)
+            io.write(stim_series_2)
 
         with NWBHDF5IO("basics_tutorial.h5", "r", load_namespaces=True) as io:
             read_nwbfile = io.read()
