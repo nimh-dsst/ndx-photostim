@@ -41,11 +41,9 @@ def main():
     # see https://pynwb.readthedocs.io/en/latest/extensions.html#extending-nwb
     # for more information
 
-    slm = NWBGroupSpec(name='slm', neurodata_type_def='SpatialLightModulator', neurodata_type_inc='Device',
-                       doc='slm',
-                       attributes=[
-                           NWBAttributeSpec('size', 'size of slm', 'numeric', shape=((2,), (3,)), required=False)],
-                       quantity='?')
+    slm = NWBGroupSpec(neurodata_type_def='SpatialLightModulator', neurodata_type_inc='Device', name='slm',
+                       doc='slm',quantity='?',
+                       attributes=[NWBAttributeSpec('size', 'size of slm', 'numeric', shape=((2,), (3,)), required=False)])
 
     psd = NWBGroupSpec(neurodata_type_def='PhotostimulationDevice', neurodata_type_inc='Device',
                        doc=('PhotostimulationDevice'),
@@ -57,17 +55,15 @@ def main():
                                                     required=False),
                                    NWBAttributeSpec('power', 'power (in milliwatts)', 'numeric', required=False),
                                    NWBAttributeSpec('pulse_rate', 'pulse rate (Hz)', 'numeric', required=False)],
-                       groups=[slm],
-                       # links=[NWBLinkSpec(name='slm', doc='slm', target_type='SpatialLightModulator', quantity='?')],
-                       )
-    pixel_roi = NWBDatasetSpec(doc='[n,2] or [n,3] list of coordinates', name='pixel_roi', quantity='?', attributes=[
-        NWBAttributeSpec(name='stimulation_diameter', doc='stimulation_diameter', dtype='numeric', required=False)])
+                       groups=[slm])
+    pixel_roi = NWBDatasetSpec(name='pixel_roi', doc='[n,2] or [n,3] list of coordinates',  shape=([None] * 2, [None] * 3), quantity='?',
+                               attributes=[NWBAttributeSpec(name='ROI_size', doc='size of ROI', dtype='numeric', required=False)])
 
     image_mask_roi = NWBDatasetSpec(
         doc='ROI masks for each ROI. Each image mask is the size of the original imaging plane (or'
             'volume) and members of the ROI are finite non-zero.', name='image_mask_roi', quantity='?',
         dims=(('num_rows', 'num_cols'), ('num_rows', 'num_cols', 'depth')),
-        shape=([None] * 2, [None] * 3), dtype='uint8')
+        shape=([None] * 2, [None] * 3))
 
     hp = NWBGroupSpec(neurodata_type_def='HolographicPattern', neurodata_type_inc='NWBContainer',
                       doc=('holographic pattern'),
@@ -100,7 +96,7 @@ def main():
             NWBAttributeSpec(name='time_per_sweep', doc='format', dtype='numeric', required=False),
             NWBAttributeSpec(name='num_sweeps', doc='format', dtype='numeric', required=False), ], quantity='?')
 
-    sp = NWBGroupSpec(neurodata_type_def='StimulusPresentation', neurodata_type_inc='TimeIntervals',
+    sp = NWBGroupSpec(neurodata_type_def='PhotostimulationTable', neurodata_type_inc='DynamicTable',
                       doc=(
                           "Table to hold event timestamps and event metadata relevant to data preprocessing and analysis. Each "
                           "row corresponds to a different event type. Use the 'event_times' dataset to store timestamps for each "

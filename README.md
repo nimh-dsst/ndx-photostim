@@ -14,7 +14,7 @@ stimulation data and metadata for a given experiment to be grouped together clea
 
 First, clone the `ndx_photostim` repository in the desired folder using the command
 ```angular2svg
-git clone hhttps://github.com/carlwharris/nwb-photostim.git
+git clone https://github.com/carlwharris/nwb-photostim.git
 ```
 Then use `python -m pip install -r requirements.txt -r requirements-dev.txt` to install the requisite
 python packages. To install `ndx_photostim`, run `python setup.py install`. The extension can then be imported into 

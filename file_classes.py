@@ -441,7 +441,7 @@ class PhotostimulationSeries(TimeSeries):
 
 
 @register_class('PhotostimulationTable', namespace)
-class PhotostimulationTable(TimeIntervals):
+class PhotostimulationTable(DynamicTable):
     """
     Table for storing Epoch data
     """
@@ -451,14 +451,14 @@ class PhotostimulationTable(TimeIntervals):
 
     __columns__ = (
         {'name': 'label', 'description': 'Start time of epoch, in seconds', 'required': True},
-        {'name': 'start_time', 'description': 'Stop time of epoch, in seconds', 'required': True},
-        {'name': 'stop_time', 'description': 'Stop time of epoch, in seconds', 'required': True},
+        # {'name': 'start_time', 'description': 'Stop time of epoch, in seconds', 'required': True},
+        # {'name': 'stop_time', 'description': 'Stop time of epoch, in seconds', 'required': True},
         {'name': 'series_name', 'description': 'Stop time of epoch, in seconds', 'required': True},
         {'name': 'pattern_name', 'description': 'Stop time of epoch, in seconds', 'required': True},
         {'name': 'photostimulation_series', 'description': 'Stop time of epoch, in seconds', 'required': True},
     )
 
-    @docval(*get_docval(TimeIntervals.__init__),
+    @docval(*get_docval(DynamicTable.__init__),
             # {'name': 'name', 'type': str, 'doc': 'name of this TimeIntervals'},  # required
             # {'name': 'description', 'type': str, 'doc': 'Description of this TimeIntervals'},
             {'name': 'photostimulation_device', 'type': PhotostimulationDevice, 'doc': 'photostimulation device', 'default': None},
@@ -499,9 +499,12 @@ class PhotostimulationTable(TimeIntervals):
             new_args = {}
             new_args['label'] = f"series_{i}"
             new_args['series_name'] = series.name
-            new_args['start_time'] = float(series.get_starting_time())
-            new_args['stop_time'] = float(series.get_end_time())
+
+            if len(series.data) == 0:
+                raise ValueError(f"Series {series.name} has no data! Cannot add to PhotostimulationTable")
+            # new_args['start_time'] = float(series.get_starting_time())
+            # new_args['stop_time'] = float(series.get_end_time())
             new_args['pattern_name'] = series.holographic_pattern.name
             new_args['photostimulation_series'] = series
-            super().add_interval(**new_args)
+            super().add_row(**new_args)
 
