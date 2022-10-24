@@ -20,7 +20,8 @@ ns_builder.include_type("TimeIntervals", namespace="core")
 
 slm = NWBGroupSpec(neurodata_type_def='SpatialLightModulator', neurodata_type_inc='Device', name='slm',
                    doc='slm', quantity='?',
-                   attributes=[NWBAttributeSpec('size', 'size of slm', 'numeric', shape=((2,), (3,)), required=False)])
+                   attributes=[NWBAttributeSpec('size', 'size of slm', 'numeric', shape=((2,), (3,)), dims=(('num_rows', 'num_cols'), ('num_rows', 'num_cols', 'depth')),
+                                                required=False)])
 
 ns_builder.add_spec(ext_source, slm)
 
@@ -48,6 +49,7 @@ image_mask_roi = NWBDatasetSpec(
     dims=(('num_rows', 'num_cols'), ('num_rows', 'num_cols', 'depth')),
     shape=([None] * 2, [None] * 3))
 
+
 hp = NWBGroupSpec(neurodata_type_def='HolographicPattern', neurodata_type_inc='NWBContainer',
                   doc=('holographic pattern'),
                   attributes=[
@@ -55,18 +57,22 @@ hp = NWBGroupSpec(neurodata_type_def='HolographicPattern', neurodata_type_inc='N
                                        required=False)],
                   datasets=[pixel_roi, image_mask_roi])
 
+# ns_builder.add_spec(ext_source, hp)
+
 ps = NWBGroupSpec(neurodata_type_def='PhotostimulationSeries', neurodata_type_inc='TimeSeries',
                   doc=('PhotostimulationSeries container'),
-                  attributes=[NWBAttributeSpec('format', 'format', 'text', required=False),
-                              NWBAttributeSpec('stimulus_duration', 'format', 'numeric',
-                                               required=False),
-                              NWBAttributeSpec('field_of_view', 'fov', 'numeric',
-                                               required=False)], groups=[hp], quantity='*')
+                  attributes=[NWBAttributeSpec('format', 'format', 'text', required=True),
+                              NWBAttributeSpec('stimulus_duration', 'format', 'numeric', required=False),
+                              NWBAttributeSpec('field_of_view', 'fov', 'numeric', required=False)],
+                  # links=[NWBLinkSpec(name='holographic_pattern', doc='photostimulation device',
+                  #                    target_type='HolographicPattern')],
+                  # datasets=[NWBDatasetSpec(name='timestamps', doc=('time stamps'))],
+                  groups=[hp],
+                  quantity='*')
 
 ns_builder.add_spec(ext_source, ps)
 
-label_col = NWBDatasetSpec(name='label', dtype='text', doc='Label for each event type.',
-                           neurodata_type_inc='VectorData')
+label_col = NWBDatasetSpec(name='label', dtype='text', doc='Row label', neurodata_type_inc='VectorData')
 # description_col = NWBDatasetSpec(name='stimulus_description', dtype='text', doc='Label for each event type.',
 #                                  quantity='?', neurodata_type_inc='VectorData')
 
@@ -85,12 +91,7 @@ sp = NWBGroupSpec(neurodata_type_def='PhotostimulationTable', neurodata_type_inc
                       "Table to hold event timestamps and event metadata relevant to data preprocessing and analysis. Each "
                       "row corresponds to a different event type. Use the 'event_times' dataset to store timestamps for each "
                       "event type. Add user-defined columns to add metadata for each event type or event time."),
-                  datasets=[label_col, stim_col],
-                  attributes=[NWBAttributeSpec(name='stimulus_method', doc='format', dtype='text', required=True),
-                              NWBAttributeSpec(name='sweeping_method', doc='format', dtype='text', required=False),
-                              NWBAttributeSpec(name='time_per_sweep', doc='format', dtype='numeric',
-                                               required=False),
-                              NWBAttributeSpec(name='num_sweeps', doc='format', dtype='numeric', required=False), ],
+                  datasets=[stim_col, stim_method],
                   quantity='?',
                   links=[NWBLinkSpec(name='photostimulation_device', doc='photostimulation device',
                                      target_type='PhotostimulationDevice')]

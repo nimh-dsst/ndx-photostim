@@ -7,6 +7,12 @@ groups:
   attributes:
   - name: size
     dtype: numeric
+    dims:
+    - - num_rows
+      - num_cols
+    - - num_rows
+      - num_cols
+      - depth
     shape:
     - - 2
     - - 3
@@ -48,6 +54,12 @@ groups:
     attributes:
     - name: size
       dtype: numeric
+      dims:
+      - - num_rows
+        - num_cols
+      - - num_rows
+        - num_cols
+        - depth
       shape:
       - - 2
       - - 3
@@ -61,7 +73,6 @@ groups:
   - name: format
     dtype: text
     doc: format
-    required: false
   - name: stimulus_duration
     dtype: numeric
     doc: format
@@ -70,6 +81,9 @@ groups:
     dtype: numeric
     doc: fov
     required: false
+  datasets:
+  - name: timestamps
+    doc: time stamps
   groups:
   - neurodata_type_def: HolographicPattern
     neurodata_type_inc: NWBContainer
@@ -120,33 +134,30 @@ groups:
     dataset to store timestamps for each event type. Add user-defined columns to add
     metadata for each event type or event time.
   quantity: '?'
-  attributes:
-  - name: stimulus_method
-    dtype: text
-    doc: format
-  - name: sweeping_method
-    dtype: text
-    doc: format
-    required: false
-  - name: time_per_sweep
-    dtype: numeric
-    doc: format
-    required: false
-  - name: num_sweeps
-    dtype: numeric
-    doc: format
-    required: false
   datasets:
-  - name: label
-    neurodata_type_inc: VectorData
-    dtype: text
-    doc: Label for each event type.
   - name: photostimulation_series
     neurodata_type_inc: VectorData
     dtype:
       target_type: PhotostimulationSeries
       reftype: object
     doc: asdas
+  - name: stimulus_method
+    dtype: text
+    doc: Scanning or scanless method for shaping optogenetic light (e.g., diffraction
+      limited points, 3D shot, disks, etc.)
+    quantity: '?'
+    attributes:
+    - name: sweeping_method
+      dtype: text
+      doc: format
+    - name: time_per_sweep
+      dtype: numeric
+      doc: format
+      required: false
+    - name: num_sweeps
+      dtype: numeric
+      doc: format
+      required: false
   links:
   - name: photostimulation_device
     target_type: PhotostimulationDevice
