@@ -187,14 +187,14 @@ class TestPhotostimulationSeries(TestCase):
         timestamps=[0.5, 1, 2, 4]
 
         with self.assertRaises(ValueError):
-            PhotostimulationSeries(name="photosim series", holographic_pattern=hp, timestamps=timestamps)
+            PhotostimulationSeries(name="photosim series", format='interval', holographic_pattern=hp, timestamps=timestamps)
 
-        PhotostimulationSeries(name="photosim series", holographic_pattern=hp, timestamps=timestamps, data=data)
+        PhotostimulationSeries(name="photosim series", format='interval', holographic_pattern=hp, timestamps=timestamps, data=data)
 
         data = [1, -1, 1, 2]
         timestamps = [0.5, 1, 2, 4]
         with self.assertRaises(ValueError):
-            PhotostimulationSeries(name="photosim series", holographic_pattern=hp, data=data, timestamps=timestamps)
+            PhotostimulationSeries(name="photosim series", holographic_pattern=hp, format='interval', data=data, timestamps=timestamps)
 
         with self.assertRaises(ValueError):
             PhotostimulationSeries(name="photosim series", holographic_pattern=hp, format='series',
@@ -203,64 +203,60 @@ class TestPhotostimulationSeries(TestCase):
     def test_add_interval(self):
         hp = get_holographic_pattern()
         #
-        # empty_series = PhotostimulationSeries(name="photosim series", holographic_pattern=hp, format='interval')
-        # empty_series.add_interval(10, 20)
-        # empty_series.add_interval(30, 40)
-        # assert empty_series.data[0] == 1
-        # assert empty_series.data[3] == -1
-        # assert len(empty_series.data) == 4
-        #
-        # assert empty_series.timestamps[0] == 10
-        # assert empty_series.timestamps[1] == 20
-        # assert len(empty_series.timestamps) == 4
+        empty_series = PhotostimulationSeries(name="photosim series", holographic_pattern=hp, format='interval')
+        empty_series.add_interval(10, 20)
+        empty_series.add_interval(30, 40)
+        assert empty_series.data[0] == 1
+        assert empty_series.data[3] == -1
+        assert len(empty_series.data) == 4
 
-        stim_series_2 = PhotostimulationSeries(name="series 2", format='interval',  holographic_pattern=hp)
+        assert empty_series.timestamps[0] == 10
+        assert empty_series.timestamps[1] == 20
+        assert len(empty_series.timestamps) == 4
+
+        stim_series_2 = PhotostimulationSeries(name="series 2", format='interval',  data=[1, -1], timestamps=[1, 3], holographic_pattern=hp)
         stim_series_2.add_interval(10., 20.)
         stim_series_2.add_interval(35., 40.)
 
-        import os
-        os.remove("basics_tutorial.h5")
-        with NWBHDF5IO("basics_tutorial.h5", "w") as io:
-            io.write(stim_series_2)
-
-        with NWBHDF5IO("basics_tutorial.h5", "r", load_namespaces=True) as io:
-            read_nwbfile = io.read()
-        print(read_nwbfile)
+        # import os
+        # os.remove("basics_tutorial.h5")
+        # with NWBHDF5IO("basics_tutorial.h5", "w") as io:
+        #     io.write(stim_series_2)
+        #
+        # with NWBHDF5IO("basics_tutorial.h5", "r", load_namespaces=True) as io:
+        #     read_nwbfile = io.read()
+        # print(read_nwbfile)
 
     def test_add_onset(self):
         hp = get_holographic_pattern()
 
-        ps = PhotostimulationSeries(name="photosim series", type='interval', holographic_pattern=hp, format='series', stimulus_duration=10)
+        ps = PhotostimulationSeries(name="photosim series",  format='series', holographic_pattern=hp, stimulus_duration=10)
         ps.add_onset(10)
         ps.add_onset([30, 40, 50])
 
         assert all(ps.timestamps == np.array([10., 30., 40., 50.]))
         assert all(ps.data == np.array([1., 1., 1., 1.]))
 
-        ps = PhotostimulationSeries(name="photosim series", type='interval', holographic_pattern=hp, format='interval', stimulus_duration=2)
+        ps = PhotostimulationSeries(name="photosim series", format='interval', holographic_pattern=hp, stimulus_duration=2)
         ps.add_onset(10)
         ps.add_onset([30, 40, 50])
 
         assert all(ps.timestamps == np.array([10., 12., 30., 32., 40., 42., 50., 52.]))
         assert all(ps.data == np.array([ 1., -1.,  1., -1.,  1., -1.,  1., -1.]))
 
-        with self.assertRaises(ValueError):
-            ps = PhotostimulationSeries(name="photosim series", holographic_pattern=hp)
-            ps.add_onset(10)
 
     def test_to_df(self):
         hp = get_holographic_pattern()
 
-        ps = PhotostimulationSeries(name="photosim series", holographic_pattern=hp, format='series',
+        ps = PhotostimulationSeries(name="photosim series", format='series', holographic_pattern=hp,
                                data=[0, 0, 0, 1, 1, 0], rate=10., stimulus_duration=4)
         ps.to_dataframe()
 
-        ps = PhotostimulationSeries(name="photosim series", holographic_pattern=hp,
-                                                  format='series', stimulus_duration=0.05,
-                                                  data=[0, 0, 0, 1, 1, 0], timestamps=[0, 0.5, 1, 1.5, 3, 6])
+        ps = PhotostimulationSeries(name="photosim series",format='series', holographic_pattern=hp,
+                                    stimulus_duration=0.05, data=[0, 0, 0, 1, 1, 0], timestamps=[0, 0.5, 1, 1.5, 3, 6])
         ps.to_dataframe()
 
-        ps = PhotostimulationSeries(name="photosim series", holographic_pattern=hp, format='interval', stimulus_duration=2)
+        ps = PhotostimulationSeries(name="photosim series",format='interval', holographic_pattern=hp,  stimulus_duration=2)
         ps.add_onset([10, 40, 50])
         ps.to_dataframe()
 
@@ -313,7 +309,6 @@ class TestPhotostimulationTable(TestCase):
         with NWBHDF5IO("basics_tutorial.nwb", "r", load_namespaces=True) as io:
             read_nwbfile = io.read()
 
-            print('')
 
     def test_PhotostimulationTable(self):
         hp = get_holographic_pattern()
@@ -364,12 +359,6 @@ class TestPhotostimulationTable(TestCase):
         sp.add_series([s1, s2, s3])
 
         sp.plot()
-
-
-
-
-
-# def test_Pipeline():
 
 if os.path.exists("tmp_test.nwb"):
     os.remove("tmp_test.nwb")
