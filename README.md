@@ -10,6 +10,8 @@ This is an NWB extension for storing holographic photostimulation data.
 with the `StimulationDevice` used to collect the patterns, into a dynamic table called `PhotostimulationTable`. This allows all
 stimulation data and metadata for a given experiment to be grouped together clearly.
 
+**For full example use, see [tutorial.ipynb](./tutorial.ipynb)**.
+
 ## Installation
 
 First, clone the `ndx_photostim` repository in the desired folder using the command
@@ -33,7 +35,7 @@ This will generate documents, stored in `/docs/build`.
 
 ## Usage
 
-**For full example usage, see `tutorial.ipynb`**
+**For full example usage, see `[tutorial.ipynb](./tutorial.ipynb)`**
 
 Below is example code to:
 1. Create a device used in photostimulation
@@ -44,6 +46,12 @@ Below is example code to:
 
 
 ```python
+from pynwb import NWBFile, NWBHDF5IO
+from ndx_photostim import SpatialLightModulator, PhotostimulationDevice, HolographicPattern, PhotostimulationSeries, PhotostimulationTable
+import numpy as np
+from dateutil.tz import tzlocal
+from datetime import datetime
+
 # create an example NWB file
 nwbfile = NWBFile('my first synthetic recording', 'EXAMPLE_ID', datetime.now(tzlocal()))
 
@@ -52,47 +60,58 @@ slm = SpatialLightModulator(name='example_SLM', description="example SLM", manuf
 
 # create a container for the device used for photostimulation, and link the SLM to it
 photostim_dev = PhotostimulationDevice(name='photostimulation_device', description="example photostimulation device",
-                                       manufacturer="device manufacturer", type='LED', wavelength=320, opsin="example opsin", slm=slm)
+                                       manufacturer="device manufacturer", type='LED', wavelength=320, opsin="example opsin")
 photostim_dev.add_slm(slm)
 
 # add the device to the NWB file
 nwbfile.add_device(photostim_dev)
 
-image_mask_roi = np.zeros((50, 50))
-
 # simulate a mask of ROIs corresponding to stimulated regions in the FOV (5 ROIs on a 50x50 pixel image)
-n_rois = 5
-for _ in range(n_rois):
+image_mask_roi = np.zeros((50, 50))
+for _ in range(5):
     x = np.random.randint(0, 45)
     y = np.random.randint(0, 45)
-    mask_roi[x:x + 5, y:y + 5] = 1
+    image_mask_roi[x:x + 5, y:y + 5] = 1
 
 # store the stimulation as "pattern_1"
-hp_1 = HolographicPattern(name='pattern_1', image_mask_roi=mask_roi)
+hp = HolographicPattern(name='pattern 1', image_mask_roi=image_mask_roi)
 
-# store the time steps in which 'hp' was presented 
-stim_series_1 = PhotostimulationSeries(name="series_1", format='interval', holographic_pattern=hp_1, 
-                                       data=[1, -1, 1, -1], timestamps=[0.5, 1, 2, 4])
+# show the mask
+hp.show_mask()
+
+# store the time steps in which 'hp' was presented (seconds 10-20 and 35-40)
+stim_series = PhotostimulationSeries(name="series 2", format='interval',  holographic_pattern=hp)
+stim_series.add_interval(10, 20)
+stim_series.add_interval(35, 40)
 
 # add the stimulus to the NWB file
-nwbfile.add_stimulus(stim)
+nwbfile.add_stimulus(stim_series)
 
 # create a table to store the time series/patterns for all stimuli together, along with experiment-specific parameters
-sp = StimulusPresentation(name='test', description='test desc', photostimulation_device=photostim_dev, stimulus_method='asas')
+stim_table = PhotostimulationTable(name='test', description='test desc', photostimulation_device=photostim_dev, 
+                           stimulus_method='asas', sweeping_method="sweeping_method", time_per_sweep=0.01, num_sweeps=10)
 
 # add the stimulus to the table
-sp.add_series(sp)
+stim_table.add_series(stim_series)
+
+# plot the timestamps when the stimulus was presented
+stim_table.plot()
 
 # create a processing module and add the PresentationTable to it
-behavior_module = nwbfile.create_processing_module(name="holographic_photostim", description="initial data")
-behavior_module.add(sp)
+module = nwbfile.create_processing_module(name="photostimulation", description="example photostimulation table")
+module.add(stim_table)
 
 # write to an NWB file and read it back
 with NWBHDF5IO("photostim_example.nwb", "w") as io:
-    io.write(sp)
+    io.write(nwbfile)
 
 with NWBHDF5IO("photostim_example.nwb", "r", load_namespaces=True) as io:
     read_nwbfile = io.read()
+
+# Check the file & processing module
+print(read_nwbfile)
+print(read_nwbfile.processing['holographic_photostim'])
+
 ```
 
 ---
