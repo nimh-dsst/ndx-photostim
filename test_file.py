@@ -3,19 +3,19 @@ from datetime import datetime
 import numpy as np
 from dateutil.tz import tzlocal
 from pynwb import NWBFile, NWBHDF5IO
-from pynwb.testing import TestCase, remove_test_file
+from pynwb.testing import TestCase
 
-# from ndx_photostim import SpatialLightModulator, PhotostimulationDevice, ImagingPlane, HolographicPattern, PhotostimulationSeries
+# from ndx_photostim import SpatialLightModulator, PhotostimulationDevice, HolographicPattern, PhotostimulationSeries, PhotostimulationTable
 from file_classes import SpatialLightModulator, PhotostimulationDevice, HolographicPattern, PhotostimulationSeries, \
     PhotostimulationTable
 
-os.system('python file_defined_namespace.py')
-
 def get_SLM():
+    '''Return SpatialLightModulator container.'''
     slm = SpatialLightModulator(name="slm", size=np.array([1, 2]))
     return slm
 
 def get_photostim_device():
+    '''Return PhotostimulationDevice containing SLM.'''
     slm = get_SLM()
     photostim_dev = PhotostimulationDevice(name="photostim_dev", description="photostim_device", type='LED',
                                            wavelength=320, slm=slm,
@@ -24,7 +24,14 @@ def get_photostim_device():
 
     return photostim_dev
 
+def get_holographic_pattern():
+    '''Return example HolographicPattern with image_mask_roi'''
+    image_mask_roi = TestHolographicPattern._create_image_mask_roi()
+    hp = HolographicPattern(name='pattern', image_mask_roi=image_mask_roi, roi_size=5)
+    return hp
+
 def get_photostim_series():
+    '''Return example PhotostimulationSeries container.'''
     hp = get_holographic_pattern()
 
     photostim_series = PhotostimulationSeries(name="photosim series", pattern=hp, unit='SIunit',
@@ -32,62 +39,33 @@ def get_photostim_series():
                                               timestamps=[0.5, 1, 2, 4], format='interval')
     return photostim_series
 
-def get_holographic_pattern():
-    image_mask_roi = TestHolographicPattern._create_image_mask_roi()
-    hp = HolographicPattern(name='pattern', image_mask_roi=image_mask_roi, roi_size=5)
-    return hp
-
 def get_series():
+    '''Return example PhotostimulationSeries.'''
     hp = get_holographic_pattern()
     series = PhotostimulationSeries(name="photosim series", format='interval', pattern=hp, data=[1, -1, 1, -1], timestamps=[0.5, 1, 2, 4], stimulus_method="stim_method", sweep_pattern="...", time_per_sweep=10, num_sweeps=20)
     return series
 
-def create_NWB_file():
-    nwb_file = NWBFile(session_description='session_description', identifier='identifier',session_start_time=datetime.datetime.now(datetime.timezone.utc))
-    return nwb_file
-
-
 class TestSLM(TestCase):
     def test_init(self):
-        slm = SpatialLightModulator(name="slm", size=np.array([1, 2]))
+        '''Test spatial light monitor initialization.'''
+        SpatialLightModulator(name="slm", size=np.array([1, 2]))
 
         with self.assertRaises(ValueError):
             SpatialLightModulator(name="slm", size=np.array([[1, 2], [3, 4]]))
 
-        # nwb_file = create_NWB_file()
-        # nwb_file.add_device(slm)
-
 class TestPhotostimulationDevice(TestCase):
     def test_init(self):
+        '''Test PhotostimulationDevice initialization and the 'add_slm' method.'''
         dev = PhotostimulationDevice(name="device", description="...", manufacturer="manufacturer",
                                      type="LED", wavelength=320, opsin='test_opsin',power=10,
                                      peak_pulse_energy=20, pulse_rate=5)
 
         slm = get_SLM()
         dev.add_slm(slm)
-        #
-        #
-        # nwb_file = create_NWB_file()
-        # nwb_file.add_device(dev)
-        #
-        # with NWBHDF5IO("tmp_test.nwb", "w") as io:
-        #     io.write(nwb_file)
-        #
-        # with NWBHDF5IO("tmp_test.nwb", "r", load_namespaces=True) as io:
-        #     read_nwbfile = io.read()
-        #
-        # assert "photostim_dev" in read_nwbfile.devices
-        # read_dev = read_nwbfile.get_device('photostim_dev')
-        # assert read_dev.slm.name == slm.name
-        # assert all(read_dev.slm.size == slm.size)
-        #
-        # assert read_dev.name == dev.name
-        # assert read_dev.description == dev.description
-        # assert read_dev.type == dev.type
-        # assert read_dev.wavelength == dev.wavelength
 
 class TestHolographicPattern(TestCase):
     def test_init_MaskROI(self):
+        '''Test HolographicPattern with 'image_mask_roi' specification.'''
         mask_roi = self._create_image_mask_roi()
         HolographicPattern(name='hp', image_mask_roi=mask_roi)
 
@@ -112,6 +90,8 @@ class TestHolographicPattern(TestCase):
             HolographicPattern(name='hp', image_mask_roi=np.random.rand(5, 5) * -1)
 
     def test_init_PixelROI(self):
+        '''Test HolographicPattern with 'pixel_roi' specification.'''
+
         pixel_roi = self._create_pixel_roi()
         hp = HolographicPattern(name='hp', pixel_roi=pixel_roi, roi_size=8, dimension=[100, 100])
         hp.pixel_to_image_mask_roi()
@@ -129,6 +109,7 @@ class TestHolographicPattern(TestCase):
 
     @staticmethod
     def _create_pixel_roi():
+        '''Helper function to create pixel_roi at 5 randomly selected coordinates.'''
         pixel_roi = []
 
         for i in range(5):
@@ -143,6 +124,7 @@ class TestHolographicPattern(TestCase):
 
     @staticmethod
     def _create_image_mask_roi():
+        '''Helper function to create an image mask with 3 ROIs on a [50, 50] grid.'''
         image_mask_roi = np.zeros((50, 50))
         x = np.random.randint(0, 3)
         y = np.random.randint(0, 3)
@@ -151,20 +133,9 @@ class TestHolographicPattern(TestCase):
 
 class TestPhotostimulationSeries(TestCase):
     def test_init(self):
+        '''Test initialization of PhotostimulationSeries under different data, format, and time specifications.'''
         hp = get_holographic_pattern()
         PhotostimulationSeries(name="photosim series", format='interval', pattern=hp, data=[1, -1, 1, -1], timestamps=[0.5, 1, 2, 4], stimulus_method="stim_method", sweep_pattern="...", time_per_sweep=10, num_sweeps=20)
-        #
-        # nwb_file = create_NWB_file()
-        # nwb_file.add_stimulus(series)
-        # nwb_file.add_scratch(ps)
-        # assert "photosim series" in nwb_file.stimulus
-
-        # with NWBHDF5IO("basics_tutorial.nwb", "w") as io:
-        #     io.write(nwb_file)
-        #
-        # with NWBHDF5IO("basics_tutorial.nwb", "r", load_namespaces=True) as io:
-        #     read_nwbfile = io.read()
-        #     print('')
 
         PhotostimulationSeries(name="photosim series", pattern=hp, format='series', data=[0, 0, 0, 1, 1, 0],
                                rate=10., stimulus_duration=0.05)
@@ -180,6 +151,7 @@ class TestPhotostimulationSeries(TestCase):
                                                   timestamps=[0, 0.5, 1, 1.5, 3, 6])
 
     def test_format_data(self):
+        '''Test data validation for PhotostimulationSeries.'''
         hp = get_holographic_pattern()
         data = [1, -1, 1, -1]
         timestamps=[0.5, 1, 2, 4]
@@ -199,6 +171,7 @@ class TestPhotostimulationSeries(TestCase):
                                data=[0, 0, 0, 1, 2, 0], rate=10.)
 
     def test_add_interval(self):
+        '''Test 'add_interval' method on 'interval' type series.'''
         hp = get_holographic_pattern()
         #
         empty_series = PhotostimulationSeries(name="photosim series", pattern=hp, format='interval')
@@ -216,16 +189,8 @@ class TestPhotostimulationSeries(TestCase):
         stim_series_2.add_interval(10., 20.)
         stim_series_2.add_interval(35., 40.)
 
-        # import os
-        # os.remove("basics_tutorial.h5")
-        # with NWBHDF5IO("basics_tutorial.h5", "w") as io:
-        #     io.write(stim_series_2)
-        #
-        # with NWBHDF5IO("basics_tutorial.h5", "r", load_namespaces=True) as io:
-        #     read_nwbfile = io.read()
-        # print(read_nwbfile)
-
     def test_add_onset(self):
+        '''Test 'add_onset' method on both 'interval' and 'series' formatted PhotostimulationSeries.'''
         hp = get_holographic_pattern()
 
         ps = PhotostimulationSeries(name="photosim series",  format='series', pattern=hp, stimulus_duration=10)
@@ -242,8 +207,8 @@ class TestPhotostimulationSeries(TestCase):
         assert all(ps.timestamps == np.array([10., 12., 30., 32., 40., 42., 50., 52.]))
         assert all(ps.data == np.array([ 1., -1.,  1., -1.,  1., -1.,  1., -1.]))
 
-
     def test_to_df(self):
+        '''Test conversion to Pandas dataframe, showing data and timestamps in each columns.'''
         hp = get_holographic_pattern()
 
         ps = PhotostimulationSeries(name="photosim series", format='series', pattern=hp,
@@ -258,30 +223,28 @@ class TestPhotostimulationSeries(TestCase):
         ps.add_onset([10, 40, 50])
         ps.to_dataframe()
 
-    def test_PhotostimulationSeries_StartStopList(self):
+    def test_start_stop_list(self):
+        '''Test if helped function '_get_start_stop_list' correctly returns a list of the start and stop times, regardess of format and time specification.'''
         hp = get_holographic_pattern()
         ps = PhotostimulationSeries(name="photosim series", format='interval', pattern=hp, data=[1, -1, 1, -1],
                                timestamps=[0.5, 1, 2, 4])
 
-        lst = ps._get_start_stop_list()
+        ps._get_start_stop_list()
 
         ps = PhotostimulationSeries(name="photosim series", pattern=hp, format='series',
                                data=[0, 0, 0, 1, 1, 0], rate=10., stimulus_duration=4)
-        lst = ps._get_start_stop_list()
+        ps._get_start_stop_list()
 
         ps = PhotostimulationSeries(name="photosim series", pattern=hp,
                                                   format='series', stimulus_duration=0.05,
                                                   data=[0, 0, 0, 1, 1, 0], timestamps=[0, 0.5, 1, 1.5, 3, 6])
-        lst = ps._get_start_stop_list()
-        print('')
-
-
+        ps._get_start_stop_list()
 
 class TestPhotostimulationTable(TestCase):
-    def test_PhotostimulationTableConstructor(self):
+    def test_init(self):
+        '''Test PhotostimulationTable initialization.'''
         dev = get_photostim_device()
         hp = get_holographic_pattern()
-
 
         nwbfile = NWBFile('my first synthetic recording', 'EXAMPLE_ID', datetime.now(tzlocal()), )
         nwbfile.add_device(dev)
@@ -300,43 +263,9 @@ class TestPhotostimulationTable(TestCase):
             name="holographic_photostim", description="initial data"
         )
         behavior_module.add(sp)
-        with NWBHDF5IO("basics_tutorial.nwb", "w") as io:
-            io.write(nwbfile)
 
-        with NWBHDF5IO("basics_tutorial.nwb", "r", load_namespaces=True) as io:
-            read_nwbfile = io.read()
-
-
-    def test_PhotostimulationTable(self):
-        hp = get_holographic_pattern()
-        series = get_photostim_series()
-        dev = get_photostim_device()
-
-        nwbfile = NWBFile('my first synthetic recording','EXAMPLE_ID', datetime.now(tzlocal()),)
-
-        nwbfile.add_device(dev)
-        sp = PhotostimulationTable(name='test', description='test desc', device=dev)
-        s1 = get_series()
-        s2 = PhotostimulationSeries(name="series2", pattern=hp, format='interval',
-                                    stimulus_duration=2, data=[1, -1, 1, -1], timestamps=[0.5, 1, 2, 4])
-        s3 = PhotostimulationSeries(name="series3", pattern=hp, format='interval',
-                                    stimulus_duration=2, data=[1, -1, 1, -1], timestamps=[0.5, 1, 2, 4])
-
-        [nwbfile.add_stimulus(s) for s in [s1, s2, s3]]
-        sp.add_series([s1, s2, s3])
-        df = sp.to_dataframe()
-        print(df)
-        behavior_module = nwbfile.create_processing_module(
-            name="holographic_photostim", description="initial data"
-        )
-        behavior_module.add(sp)
-        with NWBHDF5IO("basics_tutorial.nwb", "w") as io:
-            io.write(nwbfile)
-
-        with NWBHDF5IO("basics_tutorial.nwb", "r", load_namespaces=True) as io:
-            read_nwbfile = io.read()
-
-    def test_PhotostimulationTable_plot(self):
+    def test_plot_presentation_times(self):
+        '''Check that PhotostimulationTable can be plotted correctly.'''
         hp = get_holographic_pattern()
         dev = get_photostim_device()
 
@@ -356,12 +285,16 @@ class TestPhotostimulationTable(TestCase):
 
         sp.plot_presentation_times()
 
-if os.path.exists("tmp_test.nwb"):
-    os.remove("tmp_test.nwb")
+
+
+
 
 
 class TestIO(TestCase):
+    '''Integration tests to ensure read/write compatability.'''
+
     def setUp(self):
+        '''Create a blank NWBFile.'''
         self.nwbfile = NWBFile(
             session_description='session_description',
             identifier='identifier',
@@ -369,6 +302,7 @@ class TestIO(TestCase):
         self.path = 'test.nwb'
 
     def test_roundtrip(self):
+        '''Create an SLM, photostimulation device, a holographic pattern, and three series containers. Wrap up the stimulation data into a PhotostimulationTable, and ensure it can be written and read back in correctly.'''
         slm = SpatialLightModulator(name="slm", size=np.array([1, 2]))
         dev = PhotostimulationDevice(name="device", description="...", manufacturer="manufacturer",
                                      type="LED", wavelength=320, opsin='test_opsin', power=10,
@@ -376,7 +310,7 @@ class TestIO(TestCase):
         dev.add_slm(slm)
         self.nwbfile.add_device(dev)
 
-        hp = get_holographic_pattern()
+        hp = HolographicPattern(name='hp', image_mask_roi=np.round(np.random.rand(5, 5)))
         s1 = PhotostimulationSeries(name="series_1", format='interval', pattern=hp, data=[1, -1, 1, -1],
                                timestamps=[0.5, 1, 2, 4], stimulus_method="stim_method", sweep_pattern="...",
                                time_per_sweep=10, num_sweeps=20)
@@ -402,6 +336,80 @@ class TestIO(TestCase):
 
         if os.path.exists(self.path):
             os.remove(self.path)
+
+
+
+
+
+def test_example_usage():
+    """Check that example in the README works."""
+
+    # create an example NWB file
+    nwbfile = NWBFile('nwb-photostim_example', 'EXAMPLE_ID', datetime.now(tzlocal()))
+
+    # store the spatial light modulator used
+    slm = SpatialLightModulator(name='example_SLM', description="example SLM", manufacturer="SLM manufacturer",
+                                size=[500, 500])
+
+    # create a container for the device used for photostimulation, and link the SLM to it
+    photostim_dev = PhotostimulationDevice(name="device", description="...", manufacturer="manufacturer",
+                                 type="LED", wavelength=320, opsin='test_opsin', power=10,
+                                 peak_pulse_energy=20, pulse_rate=5)
+    photostim_dev.add_slm(slm)
+
+    # add the device to the NWB file
+    nwbfile.add_device(photostim_dev)
+
+    # simulate a mask of ROIs corresponding to stimulated regions in the FOV (5 ROIs on a 50x50 pixel image)
+    image_mask_roi = np.zeros((50, 50))
+    for _ in range(5):
+        x = np.random.randint(0, 45)
+        y = np.random.randint(0, 45)
+        image_mask_roi[x:x + 5, y:y + 5] = 1
+
+    # store the stimulation as "pattern_1"
+    hp = HolographicPattern(name='pattern_1', image_mask_roi=image_mask_roi)
+
+    # show the mask
+    hp.show_mask()
+
+    # store the time steps in which 'hp' was presented (seconds 10-20 and 35-40)
+    stim_series = PhotostimulationSeries(name="series 2", format='interval', pattern=hp,
+                                         stimulus_method="stim_method", sweep_pattern="...", time_per_sweep=10,
+                                         num_sweeps=20)
+    stim_series.add_interval(10, 20)
+    stim_series.add_interval(35, 40)
+
+    # add the stimulus to the NWB file
+    nwbfile.add_stimulus(stim_series)
+
+    # create a table to store the time series/patterns for all stimuli together, along with experiment-specific parameters
+    stim_table = PhotostimulationTable(name='test', description='test desc', device=photostim_dev)
+
+    # add the stimulus to the table
+    stim_table.add_series(stim_series)
+
+    # plot the timestamps when the stimulus was presented
+    stim_table.plot_presentation_times()
+
+    # create a processing module and add the PresentationTable to it
+    module = nwbfile.create_processing_module(name="photostimulation", description="example photostimulation table")
+    module.add(stim_table)
+
+    # write to an NWB file and read it back
+    with NWBHDF5IO('test.nwb', "w") as io:
+        io.write(nwbfile)
+
+    with NWBHDF5IO('test.nwb', "r", load_namespaces=True) as io:
+        read_nwbfile = io.read()
+
+        # Check the file & processing module
+        print(read_nwbfile)
+        print(read_nwbfile.processing['photostimulation'])
+
+    if os.path.exists('test.nwb'):
+        os.remove('test.nwb')
+
 
 
 

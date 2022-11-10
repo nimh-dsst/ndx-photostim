@@ -385,11 +385,11 @@ class PhotostimulationSeries(TimeSeries):
 
     @docval({'name': 'timestamp', 'type': (int, float, Iterable), 'doc': ("")})
     def add_onset(self, **kwargs):
-        '''
+        """
         Denote stimulation at time 'time', where time is a number or list of numbers. If type is 'series', add 1 to
         'data' and 'time' to 'timestamps'. If format is 'interval', call 'add_interval' for the interval from 'time'
         to 'time+stimulus_duration'.
-        '''
+        """
         if self.stimulus_duration is None:
             raise ValueError("Cannot add presentation to PhotostimulationSeries without 'stimulus_duration'")
 
@@ -406,7 +406,7 @@ class PhotostimulationSeries(TimeSeries):
                 self.__interval_timestamps.append(ts)
 
     def to_dataframe(self):
-        '''Display 'data' and 'timestamps' side by side as a pandas dataframe. If 'timestamps' is not specified, calculate it using 'rate'.'''
+        """Display 'data' and 'timestamps' side by side as a pandas dataframe. If 'timestamps' is not specified, calculate it using 'rate'."""
         data = np.array(self.data)
         ts = np.array(self.timestamps)
 

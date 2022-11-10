@@ -11,7 +11,10 @@ from ndx_photostim import SpatialLightModulator, PhotostimulationDevice, Hologra
 
 
 class TestIO(TestCase):
+    '''Integration tests to ensure read/write compatability.'''
+
     def setUp(self):
+        '''Create a blank NWBFile.'''
         self.nwbfile = NWBFile(
             session_description='session_description',
             identifier='identifier',
@@ -19,6 +22,7 @@ class TestIO(TestCase):
         self.path = 'test.nwb'
 
     def test_roundtrip(self):
+        '''Create an SLM, photostimulation device, a holographic pattern, and three series containers. Wrap up the stimulation data into a PhotostimulationTable, and ensure it can be written and read back in correctly.'''
         slm = SpatialLightModulator(name="slm", size=np.array([1, 2]))
         dev = PhotostimulationDevice(name="device", description="...", manufacturer="manufacturer",
                                      type="LED", wavelength=320, opsin='test_opsin', power=10,
@@ -28,12 +32,12 @@ class TestIO(TestCase):
 
         hp = HolographicPattern(name='hp', image_mask_roi=np.round(np.random.rand(5, 5)))
         s1 = PhotostimulationSeries(name="series_1", format='interval', pattern=hp, data=[1, -1, 1, -1],
-                               timestamps=[0.5, 1, 2, 4], stimulus_method="stim_method", sweep_pattern="...",
-                               time_per_sweep=10, num_sweeps=20)
+                                    timestamps=[0.5, 1, 2, 4], stimulus_method="stim_method", sweep_pattern="...",
+                                    time_per_sweep=10, num_sweeps=20)
         s2 = PhotostimulationSeries(name="series_2", format='interval', pattern=hp, data=[1, -1, 1, -1],
-                               timestamps=[0.5, 1, 2, 4])
+                                    timestamps=[0.5, 1, 2, 4])
         s3 = PhotostimulationSeries(name="series_3", pattern=hp, format='series', stimulus_duration=0.05,
-                                      data=[0, 0, 0, 1, 1, 0], timestamps=[0, 0.5, 1, 1.5, 3, 6])
+                                    data=[0, 0, 0, 1, 1, 0], timestamps=[0, 0.5, 1, 1.5, 3, 6])
         [self.nwbfile.add_stimulus(s) for s in [s1, s2, s3]]
 
         stim_table = PhotostimulationTable(name='test', description='...', device=dev)
