@@ -1,5 +1,4 @@
 from pynwb.spec import NWBNamespaceBuilder, NWBGroupSpec, NWBAttributeSpec, NWBDatasetSpec, NWBRefSpec, NWBLinkSpec
-from pynwb.spec import NWBDatasetSpec, NWBDtypeSpec
 
 ns_path = "test.namespace.yaml"
 ext_source = "test.extensions.yaml"
