@@ -148,8 +148,9 @@ class HolographicPattern(NWBContainer):
             if args_to_set['dimension'] is None:
                 args_to_set['dimension'] = mask_dim
 
-            if len(np.setdiff1d(np.unique((args_to_set['image_mask_roi'].astype(int))), np.array([0, 1]))) > 0:
-                raise ValueError("'image_mask_roi' data must be either -1 (offset) or 1 (onset)")
+            if len(np.setdiff1d(np.unique(args_to_set['image_mask_roi']), np.array([0, 1]))) > 0:
+                if len(np.setdiff1d(np.unique(args_to_set['image_mask_roi']), np.array([0., 1.]))) > 0:
+                    raise ValueError("'image_mask_roi' data must be either 0 (off) or 1 (on)")
 
         for key, val in args_to_set.items():
             setattr(self, key, val)
