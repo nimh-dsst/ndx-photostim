@@ -1,27 +1,17 @@
-import pandas as pd
-from pynwb import register_class, load_namespaces
-from pynwb.core import NWBContainer, NWBDataInterface
-from pynwb.base import TimeSeries
 from collections.abc import Iterable
-from pynwb.device import  Device
-from hdmf.utils import docval, popargs, get_docval, popargs_to_dict
-from pynwb.core import DynamicTable, VectorData
+
+import matplotlib.pyplot as plt
 import numpy as np
-from hdmf.utils import docval, getargs, popargs, popargs_to_dict, get_docval, call_docval_func
-import warnings
-from pynwb.io.core import NWBContainerMapper
+import pandas as pd
+from hdmf.utils import docval, getargs, popargs, popargs_to_dict, get_docval
+from pynwb import register_class, load_namespaces
 from pynwb import register_map
-from pynwb.base import TimeSeries, TimeSeriesReferenceVectorData, TimeSeriesReference
-from pynwb.file import MultiContainerInterface, NWBContainer
-from hdmf.build import ObjectMapper
-from hdmf.common.io.table import DynamicTableMap
-import matplotlib.pyplot as plt
-from pynwb import NWBFile
-from pynwb.epoch import  TimeIntervals
-import matplotlib.pyplot as plt
-
+from pynwb.base import TimeSeries
+from pynwb.core import DynamicTable
+from pynwb.device import Device
+from pynwb.file import NWBContainer
 from pynwb.io.base import TimeSeriesMap
-
+from pynwb.io.core import NWBContainerMapper
 
 ns_path = "test.namespace.yaml"
 load_namespaces(ns_path)
@@ -39,9 +29,12 @@ class SpatialLightModulator(Device):
 
     @docval({'name': 'name', 'type': str, 'doc': ("Name of SpatialLightMonitor.")},
             *get_docval(Device.__init__, 'description', 'manufacturer'),
-        {'name': 'size', 'type': Iterable, 'doc': ("Resolution of SpatialLightModulator (in pixels), formatted as [width, height] or [width, height, depth]."), 'default': None,
-         'shape': ((2,), (3,))}
-    )
+            {'name': 'size', 'type': Iterable,
+             'doc': ("Resolution of SpatialLightModulator (in pixels), formatted as [width, height] or [width, height, "
+                     "depth]."),
+             'default': None,
+             'shape': ((2,), (3,))}
+            )
     def __init__(self, **kwargs):
         size = popargs('size', kwargs)
         super().__init__(**kwargs)
@@ -54,18 +47,25 @@ class PhotostimulationDevice(Device):
     Device used to generate photostimulation.
     """
 
-    __nwbfields__ = ({'name': 'slm', 'child': True}, 'type', 'wavelength','opsin', 'peak_pulse_energy', 'power', 'pulse_rate')
+    __nwbfields__ = (
+        {'name': 'slm', 'child': True}, 'type', 'wavelength', 'opsin', 'peak_pulse_energy', 'power', 'pulse_rate')
 
     @docval({'name': 'name', 'type': str, 'doc': ("Name of PhotostimulationDevice.")},
             *get_docval(Device.__init__, 'description', 'manufacturer'),
             {'name': 'type', 'type': str, 'doc': ("Device used for optogenetic stimulation ('laser' or 'LED').")},
-            {'name': 'wavelength', 'type': (int, float), 'doc': ("Excitation wavelength of stimulation light (nanometers)."), 'default': None},
+            {'name': 'wavelength', 'type': (int, float),
+             'doc': ("Excitation wavelength of stimulation light (nanometers)."), 'default': None},
             {'name': 'opsin', 'type': str, 'doc': ("Type of opsin used for photoactivation."), 'default': None},
-            {'name': 'power', 'type': (int, float), 'doc': ("Incident power of stimulation device (in milliwatts)."), 'default': None},
-            {'name': 'peak_pulse_energy', 'type': (int, float), 'doc': ("If device is pulsed laser: pulse energy  (in microjoules)."), 'default': None},
-            {'name': 'pulse_rate', 'type': (int, float), 'doc': ("If device is pulsed laser: pulse rate (in kHz) used for stimulation."), 'default': None},
-            {'name': 'slm', 'type': SpatialLightModulator, 'doc': ("SpatialLightModulator used to generate holographic patterns with the PhotostimulationDevice."), 'default': None},
-    )
+            {'name': 'power', 'type': (int, float), 'doc': ("Incident power of stimulation device (in milliwatts)."),
+             'default': None},
+            {'name': 'peak_pulse_energy', 'type': (int, float),
+             'doc': ("If device is pulsed laser: pulse energy  (in microjoules)."), 'default': None},
+            {'name': 'pulse_rate', 'type': (int, float),
+             'doc': ("If device is pulsed laser: pulse rate (in kHz) used for stimulation."), 'default': None},
+            {'name': 'slm', 'type': SpatialLightModulator,
+             'doc': ("SpatialLightModulator used to generate holographic patterns with the PhotostimulationDevice."),
+             'default': None},
+            )
     def __init__(self, **kwargs):
         keys_to_set = ('slm', 'type', 'wavelength', 'opsin', 'peak_pulse_energy', 'power', 'pulse_rate')
         args_to_set = popargs_to_dict(keys_to_set, kwargs)
@@ -74,7 +74,8 @@ class PhotostimulationDevice(Device):
         for key, val in args_to_set.items():
             setattr(self, key, val)
 
-    @docval({'name': 'slm', 'type': SpatialLightModulator, 'doc': ("SpatialLightModulator used to generate holographic patterns with the PhotostimulationDevice")})
+    @docval({'name': 'slm', 'type': SpatialLightModulator,
+             'doc': ("SpatialLightModulator used to generate holographic patterns with the PhotostimulationDevice")})
     def add_slm(self, slm):
         '''
         Add a spatial light modulator to the photostimulation device.
@@ -85,6 +86,7 @@ class PhotostimulationDevice(Device):
         else:
             self.slm = slm
 
+
 @register_class('HolographicPattern', namespace)
 class HolographicPattern(NWBContainer):
     '''
@@ -94,11 +96,27 @@ class HolographicPattern(NWBContainer):
     __nwbfields__ = ('pixel_roi', 'image_mask_roi', 'roi_size', 'dimension')
 
     @docval(*get_docval(NWBContainer.__init__) + (
-            {'name': 'image_mask_roi', 'type': 'array_data', 'doc': ("ROIs designated using a mask of size [width, height] (2D stimulation) or [width, height, depth] (3D stimulation), where for a given pixel a value of 1 indicates stimulation, and a value of 0 indicates no stimulation. "), 'default': None,
-             'shape': ([None] * 2, [None] * 3)},
-            {'name': 'pixel_roi', 'type': 'array_data', 'doc': ("ROIs designated as a list specifying the pixel ([x1, y1], [x2, y2], …) or voxel ([x1, y1, z1], [x2, y2, z2], …) of each ROI, where the items in the list are the coordinates of the center of the ROI. The size of each ROI is specified via the required 'roi_size' parameter."), 'default': None, 'shape': ((None, 2), (None, 3))},
-            {'name': 'roi_size', 'type': (int, float, Iterable), 'doc': ("Size of a single stimulation ROI in pixels. If a scalar is provided, the ROI is assumed to be a circle (for 2D patterns) or cylinder (for 3D patterns) centered at the corresponding coordinates, with diameter 'roi_size'. If 'roi_size' is a two or three dimensional array, the ROI is assumed to be a rectangle or cuboid, with dimensions [width, height] or [width, height, depth]. This parameter is required when using 'pixel_roi'."), 'default': None},
-            {'name': 'dimension', 'type': Iterable, 'doc': ("Number of pixels on x, y, (and z) axes. Calculated automatically when ROI is input using 'image_mask_roi.' Required when using 'pixel_roi.'"), 'default': None, 'shape': ((2,), (3,))}
+            {'name': 'image_mask_roi', 'type': 'array_data',
+             'doc': ("ROIs designated using a mask of size [width, height] (2D stimulation) or [width, height, "
+                     "depth] (3D stimulation), where for a given pixel a value of 1 indicates stimulation, "
+                     "and a value of 0 indicates no stimulation. "),
+             'default': None, 'shape': ([None] * 2, [None] * 3)},
+            {'name': 'pixel_roi', 'type': 'array_data',
+             'doc': ("ROIs designated as a list specifying the pixel ([x1, y1], [x2, y2], …) or voxel ([x1, y1, z1], "
+                     "[x2, y2, z2], …) of each ROI, where the items in the list are the coordinates of the center of "
+                     "the ROI. The size of each ROI is specified via the required 'roi_size' parameter."),
+             'default': None, 'shape': ((None, 2), (None, 3))},
+            {'name': 'roi_size', 'type': (int, float, Iterable),
+             'doc': ("Size of a single stimulation ROI in pixels. If a scalar is provided, the ROI is assumed to be a "
+                     "circle (for 2D patterns) or cylinder (for 3D patterns) centered at the corresponding "
+                     "coordinates, with diameter 'roi_size'. If 'roi_size' is a two or three dimensional array, "
+                     "the ROI is assumed to be a rectangle or cuboid, with dimensions [width, height] or [width, "
+                     "height, depth]. This parameter is required when using 'pixel_roi'."),
+             'default': None},
+            {'name': 'dimension', 'type': Iterable,
+             'doc': ("Number of pixels on x, y, (and z) axes. Calculated automatically when ROI is input using "
+                     "'image_mask_roi.' Required when using 'pixel_roi.'"),
+             'default': None, 'shape': ((2,), (3,))}
     ))
     def __init__(self, **kwargs):
         keys_to_set = ("pixel_roi", "image_mask_roi", "roi_size", "dimension")
@@ -131,7 +149,7 @@ class HolographicPattern(NWBContainer):
                 args_to_set['dimension'] = mask_dim
 
             if len(np.setdiff1d(np.unique((args_to_set['image_mask_roi'].astype(int))), np.array([0, 1]))) > 0:
-                    raise ValueError("'image_mask_roi' data must be either -1 (offset) or 1 (onset)")
+                raise ValueError("'image_mask_roi' data must be either -1 (offset) or 1 (onset)")
 
         for key, val in args_to_set.items():
             setattr(self, key, val)
@@ -166,7 +184,7 @@ class HolographicPattern(NWBContainer):
         Y, X = np.ogrid[:dimensions[1], :dimensions[0]]
         dist_from_center = np.sqrt((X - center[0]) ** 2 + (Y - center[1]) ** 2)
 
-        mask = dist_from_center <= diameter/2
+        mask = dist_from_center <= diameter / 2
         return mask
 
     @staticmethod
@@ -214,6 +232,7 @@ class HolographicPattern(NWBContainer):
             it.iternext()
         return pixel_mask
 
+
 @register_map(HolographicPattern)
 class HolographicPatternMap(NWBContainerMapper):
 
@@ -221,6 +240,7 @@ class HolographicPatternMap(NWBContainerMapper):
         super().__init__(spec)
         pixel_roi_spec = self.spec.get_dataset('pixel_roi')
         self.map_spec('roi_size', pixel_roi_spec.get_attribute('roi_size'))
+
 
 @register_class('PhotostimulationSeries', namespace)
 class PhotostimulationSeries(TimeSeries):
@@ -233,34 +253,43 @@ class PhotostimulationSeries(TimeSeries):
                      {'name': 'unit', 'settable': False})
 
     @docval(*get_docval(TimeSeries.__init__, 'name'),
-            {'name': 'format', 'type': str, 'doc': ("Format of data denoting stimulus presentation. Can be either 'interval' or 'series' (see description for the 'data' parameter for details)"), 'enum': ["interval", "series"]},
+            {'name': 'format', 'type': str,
+             'doc': ("Format of data denoting stimulus presentation. Can be either 'interval' or 'series' (see "
+                     "description for the 'data' parameter for details)"), 'enum': ["interval", "series"]},
             {'name': 'data', 'type': ('array_data', 'data', TimeSeries), 'shape': (None,),
-             'doc': ("1D list containing information about stimulus presentation.\nIf format is 'interval', the onset "
+             'doc': ("1D list containing information about stimulus presentation. If format is 'interval', the onset "
                      "and offset of the stimulus is stored using a 1D array consisting of the values 1 (stimulus on) "
                      "and -1 (stimulus off). The corresponding times for the start and stop of the stimulus are "
                      "specified via the 'timestamp' property, where 'data[i]==1' denotes the onset of the stimulus at "
                      "time 'timestamps[i]', and 'data[i+1]==-1' denotes its offset at time 'timestamps[i+1]' (time is "
-                     "specified in seconds)."
-                     ""
-                     "If format is 'series', data consists of binary (0 or 1) values, "
-                     "to indicate whether the stimulus was presented at a given time. A value of 'data[i]==1' at time "
+                     "specified in seconds). If format is 'series', data consists of binary (0 or 1) values, to "
+                     "indicate whether the stimulus was presented at a given time. A value of 'data[i]==1' at time "
                      "'timestamps[i]', for example, indicates the stimulus was presented at time 'timestamps[i]' for "
                      "'timestamps[i]'+'stimulus_duration' seconds. Alternatively, 'rate' can be specified instead of "
                      "'timestamps', when data are sampled uniformly. Either 'timestamps' or 'rate' must be specified "
                      "when using the series format."), 'default': list()},
-            {'name': 'timestamps', 'type': ('array_data', 'data', TimeSeries, Iterable), 'shape': (None,),
-             'doc': ("Timestamps corresponding to stimulus presentation values contained in 'data'."), 'default': None},
-            {'name': 'rate', 'type': (int, float), 'doc': ("Sampling rate of the data in Hz. "), 'default': None},
-            {'name': 'stimulus_duration', 'type': (int, float), 'doc': ("Duration (in sec) the stimulus is presented following onset. Must be specified if format is 'series'. "), 'default': None},
+            {'name': 'timestamps', 'type': ('array_data', 'data', TimeSeries, Iterable),
+             'doc': ("Timestamps corresponding to stimulus presentation values contained in 'data'."),
+             'default': None, 'shape': (None,)},
+            {'name': 'rate', 'type': (int, float), 'doc': ("Sampling rate of the data in Hz."), 'default': None},
+            {'name': 'stimulus_duration', 'type': (int, float),
+             'doc': ("Duration (in sec) the stimulus is presented following onset. Must be specified if format is "
+                     "'series'. "), 'default': None},
             {'name': 'pattern', 'type': HolographicPattern, 'doc': ("HolographicPattern used as stimulation pattern.")},
-            {'name': 'stimulus_method', 'type': str, 'doc': ("Scanning or scanless method for shaping optogenetic light (e.g., diffraction limited points, 3D shot, disks, etc.)."), 'default': None},
-            {'name': 'sweep_pattern', 'type': str, 'doc': ("Sweeping pattern, if spatially modulated during stimulation (none, or other). Requires 'stim_method' is specified. (ex. logspiral)"), 'default': None},
-            {'name': 'time_per_sweep', 'type': (int, float), 'doc': ("Time to conduct a sweep (in milliseconds)."), 'default': None},
-            {'name': 'num_sweeps', 'type': (int, float), 'doc': ("Repetition of a sweep pattern for a single stimulation instance. "), 'default': None},
+            {'name': 'stimulus_method', 'type': str,
+             'doc': ("Scanning or scanless method for shaping optogenetic light (e.g., diffraction limited points, "
+                     "3D shot, disks, etc.)."), 'default': None},
+            {'name': 'sweep_pattern', 'type': str,
+             'doc': ("Sweeping pattern, if spatially modulated during stimulation (none, or other). Requires "
+                     "'stim_method' is specified. (ex. logspiral)"), 'default': None},
+            {'name': 'time_per_sweep', 'type': (int, float),
+             'doc': ("Time to conduct a sweep (in milliseconds)."), 'default': None},
+            {'name': 'num_sweeps', 'type': (int, float),
+             'doc': ("Repetition of a sweep pattern for a single stimulation instance. "), 'default': None},
             {'name': 'unit', 'type': str, 'doc': ("Timestamps unit (default: seconds)."), 'default': 'seconds'},
-            *get_docval(TimeSeries.__init__, 'resolution', 'conversion',  'starting_time',
+            *get_docval(TimeSeries.__init__, 'resolution', 'conversion', 'starting_time',
                         'comments', 'description', 'control', 'control_description', 'offset')
-    )
+            )
     def __init__(self, **kwargs):
         # Convert data to np array
         if isinstance(kwargs['data'], np.ndarray):
@@ -325,7 +354,7 @@ class PhotostimulationSeries(TimeSeries):
                 if len(np.setdiff1d(np.unique(data_int_array), np.array([0, 1]))) > 0:
                     raise ValueError("'series' data must be either 0 or 1")
 
-        keys_to_set = ('pattern',  'format', 'stimulus_duration',
+        keys_to_set = ('pattern', 'format', 'stimulus_duration',
                        'stimulus_method', 'sweep_pattern', 'time_per_sweep', 'num_sweeps')
         args_to_set = popargs_to_dict(keys_to_set, kwargs)
 
@@ -338,7 +367,6 @@ class PhotostimulationSeries(TimeSeries):
 
         for key, val in args_to_set.items():
             setattr(self, key, val)
-
 
     @docval({'name': 'start', 'type': (int, float), 'doc': ("Start of the interval (in seconds).")},
             {'name': 'stop', 'type': (int, float), 'doc': ("End of the interval (in seconds).")})
@@ -353,7 +381,6 @@ class PhotostimulationSeries(TimeSeries):
         self.__interval_data.append(-1)
         self.__interval_timestamps.append(start)
         self.__interval_timestamps.append(stop)
-
 
     @docval({'name': 'timestamp', 'type': (int, float, Iterable), 'doc': ("")})
     def add_onset(self, **kwargs):
@@ -372,7 +399,7 @@ class PhotostimulationSeries(TimeSeries):
 
         for ts in timestamps:
             if self.format == 'interval':
-                self.add_interval(ts, ts+self.stimulus_duration)
+                self.add_interval(ts, ts + self.stimulus_duration)
             else:
                 self.__interval_data.append(1)
                 self.__interval_timestamps.append(ts)
@@ -387,7 +414,7 @@ class PhotostimulationSeries(TimeSeries):
 
         if self.timestamps is None:
             # end = self.starting_time + self.stimulus_duration * (len(data)-1)
-            end = self.starting_time + (1/self.rate) * (len(data) - 1)
+            end = self.starting_time + (1 / self.rate) * (len(data) - 1)
             ts = np.linspace(self.starting_time, end, num=len(data), endpoint=True)
 
         df_dict = {'data': data, 'timestamps': ts}
@@ -413,11 +440,12 @@ class PhotostimulationSeries(TimeSeries):
             start_times = list(df[df['data'] == 1]['timestamps'])
 
             for start in start_times:
-                start_stop.append((start, start+self.stimulus_duration))
+                start_stop.append((start, start + self.stimulus_duration))
         return start_stop
 
     def _get_start_time(self):
-        '''Returns 'starting_time' property if it exists, otherwise returns the first timestamp value if 'timestamps' exists. If both are none, assume the starting time is 0. '''
+        '''Returns 'starting_time' property if it exists, otherwise returns the first timestamp value if 'timestamps'
+        exists. If both are none, assume the starting time is 0. '''
         if self.starting_time is not None:
             return self.starting_time
 
@@ -435,7 +463,7 @@ class PhotostimulationSeries(TimeSeries):
             return np.nan
 
         if self.timestamps is None:
-            end = self._get_start_time() + self.stimulus_duration * (len(self.data)-1)
+            end = self._get_start_time() + self.stimulus_duration * (len(self.data) - 1)
             return end
 
         return self.timestamps[-1]
@@ -447,6 +475,7 @@ class PhotostimulationSeries(TimeSeries):
     @property
     def timestamps(self):
         return self.__interval_timestamps
+
 
 @register_map(PhotostimulationSeries)
 class PhotostimulationSeriesMap(TimeSeriesMap):
@@ -465,22 +494,28 @@ class PhotostimulationTable(DynamicTable):
     Table of to hold all of an experiment's PhotostimulationSeries objects. Each PhotostimulationSeries, and associated data and metadata, is contained in its own row.
     """
 
-    __fields__ = ( 'device',)
+    __fields__ = ('device',)
     # __fields__ = ({'name': 'photostimulation_device', 'child': True}, "stimulus_method", "sweeping_method", "time_per_sweep", "num_sweeps")
 
     __columns__ = (
-        {'name': 'row_name', 'description': ("Name for the row of the table, and the data it corresponds to. "), 'required': True},
-        {'name': 'series', 'description': ("The PhotostimulationSeries container referenced in the row."), 'required': True},
-        {'name': 'series_name', 'description': ("Name of the PhotostimulationSeries contained in the row."), 'required': True},
-        {'name': 'series_format', 'description': ("Format of the PhotostimulationSeries ('interval' or 'series')."), 'required': True},
+        {'name': 'row_name', 'description': ("Name for the row of the table, and the data it corresponds to. "),
+         'required': True},
+        {'name': 'series', 'description': ("The PhotostimulationSeries container referenced in the row."),
+         'required': True},
+        {'name': 'series_name', 'description': ("Name of the PhotostimulationSeries contained in the row."),
+         'required': True},
+        {'name': 'series_format', 'description': ("Format of the PhotostimulationSeries ('interval' or 'series')."),
+         'required': True},
         {'name': 'num_samples', 'description': ("Number of data points in the series."), 'required': True},
         {'name': 'start_time', 'description': ("Start time of the series."), 'required': True},
-         {'name': 'stop_time', 'description': ("Stop time of the series."), 'required': True},
-        {'name': 'pattern_name', 'description': ("Name of the HolographicPattern associated with the series."), 'required': True},
+        {'name': 'stop_time', 'description': ("Stop time of the series."), 'required': True},
+        {'name': 'pattern_name', 'description': ("Name of the HolographicPattern associated with the series."),
+         'required': True},
     )
 
     @docval(*get_docval(DynamicTable.__init__, 'name', 'description'),
-            {'name': 'device', 'type': PhotostimulationDevice, 'doc': ("PhotostimulationDevice used in the table's PhotostimulationSeries containers."), 'default': None},
+            {'name': 'device', 'type': PhotostimulationDevice,
+             'doc': ("PhotostimulationDevice used in the table's PhotostimulationSeries containers."), 'default': None},
             *get_docval(DynamicTable.__init__, 'id', 'columns', 'colnames')
             )
     def __init__(self, **kwargs):
@@ -546,15 +581,14 @@ class PhotostimulationTable(DynamicTable):
         y_ticks = []
         for i, series in enumerate(self.series):
             start_stop_list = series._get_start_stop_list()
-            ax.broken_barh(start_stop_list, ((i+1)*10, 8))
-            y_ticks.append((i+1)*10+4)
+            ax.broken_barh(start_stop_list, ((i + 1) * 10, 8))
+            y_ticks.append((i + 1) * 10 + 4)
 
         ax.set_yticks(y_ticks, labels=self.series_name)
         ax.set_xlabel('Timestamp (seconds)')
         ax.set_title(f"Presentation timestamps for PhotostimulationTable '{self.name}'")
         ax.xaxis.grid()
         plt.show()
-
 
 # @register_map(PhotostimulationTable)
 # class PhotostimulationTableMap(DynamicTableMap):

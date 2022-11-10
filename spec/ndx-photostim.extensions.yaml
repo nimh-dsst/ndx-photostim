@@ -2,112 +2,124 @@ groups:
 - neurodata_type_def: SpatialLightModulator
   neurodata_type_inc: Device
   name: slm
-  doc: slm
+  doc: Spatial light monitor used in the experiment.
   quantity: '?'
   attributes:
   - name: size
     dtype: numeric
     dims:
-    - - num_rows
-      - num_cols
-    - - num_rows
-      - num_cols
+    - - width
+      - height
+    - - width
+      - height
       - depth
     shape:
     - - 2
     - - 3
-    doc: size of slm
+    doc: Resolution of SpatialLightModulator (in pixels), formatted as [width, height]
+      or [width, height, depth].
     required: false
 - neurodata_type_def: PhotostimulationDevice
   neurodata_type_inc: Device
-  doc: PhotostimulationDevice
+  doc: Device used to generate photostimulation.
   attributes:
   - name: type
     dtype: text
-    doc: type of stimulation (laser or LED)
+    doc: Device used for optogenetic stimulation ('laser' or 'LED').
   - name: wavelength
     dtype: numeric
-    doc: wavelength of photostimulation
+    doc: Excitation wavelength of stimulation light (nanometers).
     required: false
   - name: opsin
     dtype: text
-    doc: opsin used
-    required: false
-  - name: peak_pulse_power
-    dtype: numeric
-    doc: peak pulse power (J)
+    doc: Type of opsin used for photoactivation.
     required: false
   - name: power
     dtype: numeric
-    doc: power (in milliwatts)
+    doc: Incident power of stimulation device (in milliwatts).
+    required: false
+  - name: peak_pulse_energy
+    dtype: numeric
+    doc: 'If device is pulsed laser: pulse energy  (in microjoules).'
     required: false
   - name: pulse_rate
     dtype: numeric
-    doc: pulse rate (Hz)
+    doc: 'If device is pulsed laser: pulse rate (in kHz) used for stimulation.'
     required: false
   groups:
   - neurodata_type_def: SpatialLightModulator
     neurodata_type_inc: Device
     name: slm
-    doc: slm
+    doc: Spatial light monitor used in the experiment.
     quantity: '?'
     attributes:
     - name: size
       dtype: numeric
       dims:
-      - - num_rows
-        - num_cols
-      - - num_rows
-        - num_cols
+      - - width
+        - height
+      - - width
+        - height
         - depth
       shape:
       - - 2
       - - 3
-      doc: size of slm
+      doc: Resolution of SpatialLightModulator (in pixels), formatted as [width, height]
+        or [width, height, depth].
       required: false
 - neurodata_type_def: PhotostimulationSeries
   neurodata_type_inc: TimeSeries
-  doc: PhotostimulationSeries container
+  doc: 'TimeSeries object for photostimulus presentation. '
   quantity: '*'
   attributes:
   - name: format
     dtype: text
-    doc: format
+    doc: Format of data denoting stimulus presentation. Can be either 'interval' or
+      'series'.
   - name: stimulus_duration
     dtype: numeric
-    doc: format
+    doc: Duration (in sec) the stimulus is presented following onset.
     required: false
-  - name: field_of_view
-    dtype: numeric
-    doc: fov
-    required: false
+  datasets:
+  - name: stimulus_method
+    dtype: text
+    doc: Scanning or scanless method for shaping optogenetic light (e.g., diffraction
+      limited points, 3D shot, disks, etc.).
+    quantity: '?'
+    attributes:
+    - name: sweep_pattern
+      dtype: text
+      doc: Sweeping method, if spatially modulated during stimulation (none, or other).
+        Requires 'stim_method' is specified. (ex. logspiral)
+    - name: time_per_sweep
+      dtype: numeric
+      doc: Time to conduct a sweep (in milliseconds).
+      required: false
+    - name: num_sweeps
+      dtype: numeric
+      doc: 'Repetition of a sweep pattern for a single stimulation instance. '
+      required: false
   groups:
   - neurodata_type_def: HolographicPattern
     neurodata_type_inc: NWBContainer
-    doc: holographic pattern
+    name: pattern
+    doc: 'Container to store the pattern used in a photostimulation experiment. '
     attributes:
     - name: dimension
       dtype: numeric
+      dims:
+      - - width
+        - height
+      - - width
+        - height
+        - depth
       shape:
       - - 2
       - - 3
-      doc: dimension of hp
+      doc: Number of pixels on x, y, (and z) axes. Calculated automatically when ROI
+        is input using 'image_mask_roi.' Required when using 'pixel_roi.'
       required: false
     datasets:
-    - name: pixel_roi
-      shape:
-      - - null
-        - null
-      - - null
-        - null
-        - null
-      doc: '[n,2] or [n,3] list of coordinates'
-      quantity: '?'
-      attributes:
-      - name: ROI_size
-        dtype: numeric
-        doc: size of ROI
-        required: false
     - name: image_mask_roi
       dims:
       - - num_rows
@@ -121,41 +133,44 @@ groups:
       - - null
         - null
         - null
-      doc: ROI masks for each ROI. Each image mask is the size of the original imaging
-        plane (orvolume) and members of the ROI are finite non-zero.
+      doc: 'ROIs designated using a mask of size [width, height] (2D stimulation)
+        or [width, height, depth] (3D stimulation), where for a given pixel a value
+        of 1 indicates stimulation, and a value of 0 indicates no stimulation. '
       quantity: '?'
+    - name: pixel_roi
+      shape:
+      - - null
+        - null
+      - - null
+        - null
+        - null
+      doc: ROIs designated as a list specifying the pixel ([x1, y1], [x2, y2], …)
+        or voxel ([x1, y1, z1], [x2, y2, z2], …) of each ROI, where the items in the
+        list are the coordinates of the center of the ROI. The size of each ROI is
+        specified via the required 'roi_size' parameter.
+      quantity: '?'
+      attributes:
+      - name: roi_size
+        dtype: numeric
+        doc: Size of a single stimulation ROI in pixels. If a scalar is provided,
+          the ROI is assumed to be a circle (for 2D patterns) or cylinder (for 3D
+          patterns) centered at the corresponding coordinates, with diameter 'roi_size'.
+          If 'roi_size' is a two or three dimensional array, the ROI is assumed to
+          be a rectangle or cuboid, with dimensions [width, height] or [width, height,
+          depth]. This parameter is required when using 'pixel_roi'.
+        required: false
 - neurodata_type_def: PhotostimulationTable
   neurodata_type_inc: DynamicTable
-  doc: Table to hold event timestamps and event metadata relevant to data preprocessing
-    and analysis. Each row corresponds to a different event type. Use the 'event_times'
-    dataset to store timestamps for each event type. Add user-defined columns to add
-    metadata for each event type or event time.
+  doc: "Table of to hold all of an experiment's PhotostimulationSeries objects. "
   quantity: '?'
   datasets:
-  - name: photostimulation_series
+  - name: series
     neurodata_type_inc: VectorData
     dtype:
       target_type: PhotostimulationSeries
       reftype: object
-    doc: asdas
-  - name: stimulus_method
-    dtype: text
-    doc: Scanning or scanless method for shaping optogenetic light (e.g., diffraction
-      limited points, 3D shot, disks, etc.)
-    quantity: '?'
-    attributes:
-    - name: sweeping_method
-      dtype: text
-      doc: format
-    - name: time_per_sweep
-      dtype: numeric
-      doc: format
-      required: false
-    - name: num_sweeps
-      dtype: numeric
-      doc: format
-      required: false
+    doc: PhotostimulationSeries object corresponding to the row.
   links:
-  - name: photostimulation_device
+  - name: device
     target_type: PhotostimulationDevice
-    doc: photostimulation device
+    doc: PhotostimulationDevice used in the table's PhotostimulationSeries containers.

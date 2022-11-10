@@ -32,8 +32,6 @@ slm = NWBGroupSpec(neurodata_type_def='SpatialLightModulator',
                    quantity='?',
                    attributes=[size])
 
-ns_builder.add_spec(ext_source, slm)
-
 attribs = [NWBAttributeSpec(name='type',
                             doc=("Device used for optogenetic stimulation ('laser' or 'LED')."),
                             dtype='text'),
@@ -63,10 +61,12 @@ psd = NWBGroupSpec(neurodata_type_def='PhotostimulationDevice',
                    doc=("Device used to generate photostimulation."),
                    attributes=attribs,
                    groups=[slm])
-ns_builder.add_spec(ext_source, psd)
+
 
 image_mask_roi = NWBDatasetSpec(name='image_mask_roi',
-                                doc=("ROIs designated using a mask of size [width, height] (2D stimulation) or [width, height, depth] (3D stimulation), where for a given pixel a value of 1 indicates stimulation, and a value of 0 indicates no stimulation. "),
+                                doc=("ROIs designated using a mask of size [width, height] (2D stimulation) or ["
+                                     "width, height, depth] (3D stimulation), where for a given pixel a value of 1 "
+                                     "indicates stimulation, and a value of 0 indicates no stimulation. "),
                                 quantity='?',
                                 dims=(('num_rows', 'num_cols'), ('num_rows', 'num_cols', 'depth')),
                                 shape=([None] * 2, [None] * 3))
@@ -82,13 +82,17 @@ roi_size = NWBAttributeSpec(name='roi_size',
                             required=False)
 
 pixel_roi = NWBDatasetSpec(name='pixel_roi',
-                           doc=("ROIs designated as a list specifying the pixel ([x1, y1], [x2, y2], …) or voxel ([x1, y1, z1], [x2, y2, z2], …) of each ROI, where the items in the list are the coordinates of the center of the ROI. The size of each ROI is specified via the required 'roi_size' parameter."),
+                           doc=("ROIs designated as a list specifying the pixel ([x1, y1], [x2, y2], …) or voxel (["
+                                "x1, y1, z1], [x2, y2, z2], …) of each ROI, where the items in the list are the "
+                                "coordinates of the center of the ROI. The size of each ROI is specified via the "
+                                "required 'roi_size' parameter."),
                            shape=([None] * 2, [None] * 3),
                            quantity='?',
                            attributes=[roi_size])
 
 dimension = NWBAttributeSpec(name='dimension',
-                             doc=("Number of pixels on x, y, (and z) axes. Calculated automatically when ROI is input using 'image_mask_roi.' Required when using 'pixel_roi.'"),
+                             doc=("Number of pixels on x, y, (and z) axes. Calculated automatically when ROI is input "
+                                  "using 'image_mask_roi.' Required when using 'pixel_roi.'"),
                              dtype='numeric',
                              shape=((2,), (3,)),
                              dims=(('width', 'height'), ('width', 'height', 'depth')),
@@ -100,8 +104,6 @@ hp = NWBGroupSpec(neurodata_type_def='HolographicPattern',
                   doc=("Container to store the pattern used in a photostimulation experiment. "),
                   attributes=[dimension],
                   datasets=[image_mask_roi, pixel_roi])
-
-ns_builder.add_spec(ext_source, hp)
 
 
 attribs = [NWBAttributeSpec(name='sweep_pattern',
@@ -131,6 +133,7 @@ attribs = [NWBAttributeSpec(name='format',
                             doc=("Duration (in sec) the stimulus is presented following onset."),
                             dtype='numeric',
                             required=False)]
+
 ps = NWBGroupSpec(neurodata_type_def='PhotostimulationSeries',
                   neurodata_type_inc='TimeSeries',
                   doc=("TimeSeries object for photostimulus presentation. "),
@@ -138,8 +141,6 @@ ps = NWBGroupSpec(neurodata_type_def='PhotostimulationSeries',
                   attributes=attribs,
                   datasets=[stim_method],
                   groups=[hp])
-
-ns_builder.add_spec(ext_source, ps)
 
 stim_col = NWBDatasetSpec(name='series',
                           doc=("PhotostimulationSeries object corresponding to the row."),
@@ -149,11 +150,17 @@ stim_col = NWBDatasetSpec(name='series',
 device = NWBLinkSpec(name='device',
                      doc=("PhotostimulationDevice used in the table's PhotostimulationSeries containers."),
                      target_type='PhotostimulationDevice')
-sp = NWBGroupSpec(neurodata_type_def='PhotostimulationTable',
+
+pt = NWBGroupSpec(neurodata_type_def='PhotostimulationTable',
                   neurodata_type_inc='DynamicTable',
                   doc=("Table of to hold all of an experiment's PhotostimulationSeries objects. "),
                   quantity='?',
                   datasets=[stim_col],
                   links=[device])
-ns_builder.add_spec(ext_source, sp)
+
+ns_builder.add_spec(ext_source, slm)
+ns_builder.add_spec(ext_source, psd)
+ns_builder.add_spec(ext_source, hp)
+ns_builder.add_spec(ext_source, ps)
+ns_builder.add_spec(ext_source, pt)
 ns_builder.export(ns_path)
