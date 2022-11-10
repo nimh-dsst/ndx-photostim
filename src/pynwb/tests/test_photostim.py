@@ -1,4 +1,4 @@
-import file_classes
+# import file_classes
 from ndx_photostim import SpatialLightModulator, PhotostimulationDevice, HolographicPattern, PhotostimulationSeries, PhotostimulationTable
 from datetime import datetime
 from dateutil.tz import tzlocal
