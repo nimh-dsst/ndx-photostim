@@ -89,7 +89,7 @@ class TestPhotostimulationDevice(TestCase):
 class TestHolographicPattern(TestCase):
     def test_HolographicPatternConstructor_MaskROI(self):
         image_mask_roi = self._create_image_mask_roi()
-        HolographicPattern(name='hp', image_mask_roi=image_mask_roi, ROI_size=5)
+        hp = HolographicPattern(name='hp', image_mask_roi=image_mask_roi, ROI_size=5)
 
         HolographicPattern(name='hp', image_mask_roi=np.round(np.random.rand(5, 5)),
                            ROI_size=5)
@@ -163,7 +163,19 @@ class TestHolographicPattern(TestCase):
 class TestPhotostimulationSeries(TestCase):
     def test_PhotostimulationSeries_Constructor(self):
         hp = get_holographic_pattern()
-        PhotostimulationSeries(name="photosim series", format='interval', holographic_pattern=hp, data=[1, -1, 1, -1], timestamps=[0.5, 1, 2, 4])
+        series = PhotostimulationSeries(name="photosim series", format='interval', holographic_pattern=hp, data=[1, -1, 1, -1], timestamps=[0.5, 1, 2, 4], stimulus_method="stim_method", sweeping_method="method")
+
+        nwb_file = create_NWB_file()
+        nwb_file.add_stimulus(series)
+        # nwb_file.add_scratch(ps)
+        # assert "photosim series" in nwb_file.stimulus
+
+        with NWBHDF5IO("basics_tutorial.nwb", "w") as io:
+            io.write(nwb_file)
+
+        with NWBHDF5IO("basics_tutorial.nwb", "r", load_namespaces=True) as io:
+            read_nwbfile = io.read()
+            print('')
 
         PhotostimulationSeries(name="photosim series", holographic_pattern=hp, format='series', data=[0, 0, 0, 1, 1, 0],
                                rate=10., stimulus_duration=0.05)
@@ -177,9 +189,8 @@ class TestPhotostimulationSeries(TestCase):
         series = PhotostimulationSeries(name="photosim series", holographic_pattern=hp, format='series',
                                                   stimulus_duration = 0.05, data=[0, 0, 0, 1, 1, 0],
                                                   timestamps=[0, 0.5, 1, 1.5, 3, 6])
-        nwb_file = create_NWB_file()
-        nwb_file.add_stimulus(series)
-        assert "photosim series" in nwb_file.stimulus
+
+
 
     def test_PhotostimulationSeriesFormatData(self):
         hp = get_holographic_pattern()
@@ -288,7 +299,7 @@ class TestPhotostimulationTable(TestCase):
         nwbfile = NWBFile('my first synthetic recording', 'EXAMPLE_ID', datetime.now(tzlocal()), )
         nwbfile.add_device(dev)
 
-        sp = PhotostimulationTable(name='test', description='test desc', photostimulation_device=dev, stimulus_method="stim_method", sweeping_method="method")
+        sp = PhotostimulationTable(name='test', description='test desc', photostimulation_device=dev)
         s1 = PhotostimulationSeries(name="series1", holographic_pattern=hp, format='interval',
                                     stimulus_duration=2, data=[1, -1, 1, -1], timestamps=[0.5, 1, 2, 4])
         s2 = PhotostimulationSeries(name="series2", holographic_pattern=hp, format='interval',
@@ -358,7 +369,7 @@ class TestPhotostimulationTable(TestCase):
         [nwbfile.add_stimulus(s) for s in [s1, s2, s3]]
         sp.add_series([s1, s2, s3])
 
-        sp.plot()
+        sp.plot_presentation_times()
 
 if os.path.exists("tmp_test.nwb"):
     os.remove("tmp_test.nwb")

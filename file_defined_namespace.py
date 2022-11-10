@@ -57,23 +57,8 @@ hp = NWBGroupSpec(neurodata_type_def='HolographicPattern', neurodata_type_inc='N
                                        required=False)],
                   datasets=[pixel_roi, image_mask_roi])
 
-# ns_builder.add_spec(ext_source, hp)
+ns_builder.add_spec(ext_source, hp)
 
-ps = NWBGroupSpec(neurodata_type_def='PhotostimulationSeries', neurodata_type_inc='TimeSeries',
-                  doc=('PhotostimulationSeries container'),
-                  attributes=[NWBAttributeSpec('format', 'format', 'text', required=True),
-                              NWBAttributeSpec('stimulus_duration', 'format', 'numeric', required=False),
-                              NWBAttributeSpec('field_of_view', 'fov', 'numeric', required=False)],
-                  # links=[NWBLinkSpec(name='holographic_pattern', doc='photostimulation device',
-                  #                    target_type='HolographicPattern')],
-                  # datasets=[NWBDatasetSpec(name='timestamps', doc=('time stamps'))],
-                  groups=[hp],
-                  quantity='*')
-
-ns_builder.add_spec(ext_source, ps)
-
-stim_col = NWBDatasetSpec(name='photostimulation_series', doc='asdas', neurodata_type_inc='VectorData',
-                          dtype=NWBRefSpec(target_type='PhotostimulationSeries', reftype='object'))
 
 stim_method = NWBDatasetSpec(name='stimulus_method',
                              doc='Scanning or scanless method for shaping optogenetic light (e.g., diffraction limited points, 3D shot, disks, etc.)',
@@ -82,12 +67,36 @@ stim_method = NWBDatasetSpec(name='stimulus_method',
         NWBAttributeSpec(name='time_per_sweep', doc='format', dtype='numeric', required=False),
         NWBAttributeSpec(name='num_sweeps', doc='format', dtype='numeric', required=False), ], quantity='?')
 
+
+ps = NWBGroupSpec(neurodata_type_def='PhotostimulationSeries', neurodata_type_inc='TimeSeries',
+                  doc=('PhotostimulationSeries container'),
+                  attributes=[NWBAttributeSpec('format', 'format', 'text', required=True),
+                              NWBAttributeSpec('stimulus_duration', 'format', 'numeric', required=False),
+                              NWBAttributeSpec('field_of_view', 'fov', 'numeric', required=False),
+                            #   NWBAttributeSpec('stimulus_method', 'Scanning or scanless method for shaping optogenetic light (e.g., diffraction limited points, 3D shot, disks, etc.)', 'text', required=False),
+                            #   NWBAttributeSpec('sweeping_method', 'fov', 'text', required=False),
+                            # NWBAttributeSpec('time_per_sweep', 'fov', 'numeric', required=False),
+                            # NWBAttributeSpec(name='num_sweeps', doc='format', dtype='numeric', required=False)
+                              ],
+                  # links=[NWBLinkSpec(name='holographic_pattern', doc='photostimulation device',
+                  #                    target_type='HolographicPattern')],
+                  # datasets=[NWBDatasetSpec(name='timestamps', doc=('time stamps'))],
+                  datasets=[stim_method],
+                  groups=[hp],
+                  quantity='*')
+
+ns_builder.add_spec(ext_source, ps)
+
+stim_col = NWBDatasetSpec(name='photostimulation_series', doc='asdas', neurodata_type_inc='VectorData',
+                          dtype=NWBRefSpec(target_type='PhotostimulationSeries', reftype='object'))
+
+
 sp = NWBGroupSpec(neurodata_type_def='PhotostimulationTable', neurodata_type_inc='DynamicTable',
                   doc=(
                       "Table to hold event timestamps and event metadata relevant to data preprocessing and analysis. Each "
                       "row corresponds to a different event type. Use the 'event_times' dataset to store timestamps for each "
                       "event type. Add user-defined columns to add metadata for each event type or event time."),
-                  datasets=[stim_col, stim_method],
+                  datasets=[stim_col],
                   quantity='?',
                   links=[NWBLinkSpec(name='photostimulation_device', doc='photostimulation device',
                                      target_type='PhotostimulationDevice')]
