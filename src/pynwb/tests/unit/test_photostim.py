@@ -26,7 +26,6 @@ def get_photostim_device():
                                            wavelength=320, slm=slm,
                                            opsin='test_opsin', peak_pulse_energy=20,
                                            power=10, pulse_rate=5)
-
     return photostim_dev
 
 def get_photostim_series():
@@ -47,19 +46,18 @@ def create_NWB_file():
                        session_start_time=datetime.now(tzlocal()))
     return nwb_file
 
-
 class TestSLM(TestCase):
-    def test_SpatialLightModulator(self):
-        slm = get_SLM()
+    def test_init(self):
+        SpatialLightModulator(name="slm", size=np.array([1, 2, 3]))
 
         with self.assertRaises(ValueError):
             SpatialLightModulator(name="slm", size=np.array([[1, 2], [3, 4]]))
 
-        nwb_file = create_NWB_file()
-        nwb_file.add_device(slm)
+        # nwb_file = create_NWB_file()
+        # nwb_file.add_device(slm)
 
 class TestPhotostimulationDevice(TestCase):
-    def test_PhotostimulationDevice(self):
+    def test_init(self):
         photostim_dev = PhotostimulationDevice(name="photostim_dev", description="photostim_device", type='LED',
                                                wavelength=320,
                                                opsin='test_opsin', peak_pulse_energy=20,
