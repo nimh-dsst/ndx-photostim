@@ -8,13 +8,13 @@ from pynwb import register_class, load_namespaces
 from pynwb import register_map
 
 from pynwb.image import GrayscaleImage
-from file_classes import SpatialLightModulator, PhotostimulationDevice, HolographicPattern, PhotostimulationSeries, PhotostimulationTable
-# from ndx_photostim import SpatialLightModulator, PhotostimulationDevice, ImagingPlane, HolographicPattern, PhotostimulationSeries
+# from file_classes import SpatialLightModulator, PhotostimulationDevice, HolographicPattern, PhotostimulationSeries, PhotostimulationTable
+from ndx_photostim import SpatialLightModulator, PhotostimulationDevice, HolographicPattern, PhotostimulationSeries, PhotostimulationTable
 import matplotlib.pyplot as plt
 import os
 from hdmf.build import ObjectMapper
 
-os.system('python file_defined_namespace.py')
+# os.system('python file_defined_namespace.py')
 
 def get_SLM():
     slm = SpatialLightModulator(name="slm", size=np.array([1, 2, 3]))

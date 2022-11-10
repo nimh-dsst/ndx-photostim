@@ -9,6 +9,7 @@ run the following commands (while in the `api_documentation` folder):
 
 ```angular2svg
 sphinx-apidoc -o source ..
+sphinx-apidoc -o source ../src/pynwb
 sphinx-build -b html source/ build/
 ```
 
