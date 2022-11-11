@@ -1,26 +1,32 @@
 # ndx-photostim Extension for NWB
 
-This is a NeuroData Without Borders (NWB) extension for storing data and metadata from holographic photostimulation 
+[//]: # (<img src="./docs/images/nwb.PNG" width="250">)
+<div>
+<img src="./docs/images/nwb.PNG" width="50%" style="float:right; margin: 0 0 1em 1em;">
+<p>This is a NeuroData Without Borders (NWB) extension for storing data and metadata from holographic photostimulation 
 methods. It includes containers for storing photostimulation-specific device parameters, holographic patterns 
-(either 2D or 3D), and time series data related to photostimulation.
+(either 2D or 3D), and time series data related to photostimulation.</p>
+</div>
 
 We release five NWB containers as part of this extension:
 
-* Two containers are used to store **device-specific metadata**, `SpatialLightModulator` and `PhotostimulationDevice`,
-* `HolographicPattern` is used to store the **stimulation pattern**.
+* Two containers are used to store **device-specific metadata**, `SpatialLightModulator` and `PhotostimulationDevice`.
+* `HolographicPattern` is stores the **stimulation pattern**.
 * `PhotostimulationSeries` contains the **time series data** corresponding to the presentation of a given stimulus (where the stimulus is represented by a `HolographicPattern` container linked to the `PhotostimulationSeries`).
-* We group **all the time series/patterns for a given experiment** together using the `PhotostimulationTable` container. This object is a dynamic table, where each row in the table contains a `PhotostimulationSeries`. Additionally, the table links to the `StimulationDevice` used to generate the patterns and record the results contained in the table.
+* We group **all time series & patterns for a given experiment** together using the `PhotostimulationTable` container. This object is a dynamic table, where each row in the table contains a `PhotostimulationSeries`. Additionally, the table links to the corresponding `StimulationDevice` used to generate patterns and record results.
+
 
 ## Background
 
-State-of-the-art holographic photostimulation methods, used in concert with two-photon imaging, allow unprecedented 
+<img src="./docs/images/Cap1.PNG" width="35%" style="float:left; margin: 0 1em 1em 0;">
+<p>State-of-the-art holographic photostimulation methods, used in concert with two-photon imaging, allow unprecedented 
 control and measurement of cell activity in the living brain. Methods for managing data for two-photon imaging 
 experiments are improving, but there is little to no standardization of data for holographic stimulation methods. 
 Stimulation in vivo depends on fine-tuning many experimental variables, which poses a challenge for reproducibility 
 and data sharing between researchers. To improve standardization of photostimulation data storage and processing, 
 we release in this repository a generic data format and pipeline for simultaneous holographic stimulation experiments, 
 using the NWB format to store experimental details and data relating to both acquisition 
-and photostimulation. 
+and photostimulation. </p>
 
 ## Installation
 
