@@ -1,16 +1,16 @@
 ndx\_photostim package
 ======================
 
-ndx\_photostim.photostim
+package
 ----------
 .. automodule:: ndx_photostim.photostim
    :members:
    :undoc-members:
    :show-inheritance:
 
-ndx\_photostim.io
+IO
 ----------
-.. automodule:: ndx_photostim.io.photostim
+.. automodule:: ndx_photostim.io.photostim_io
    :members:
    :undoc-members:
    :show-inheritance:

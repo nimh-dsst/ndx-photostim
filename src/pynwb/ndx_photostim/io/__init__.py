@@ -1,1 +1,1 @@
-from . import photostim as __photostim
+from . import photostim_io as __photostim

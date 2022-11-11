@@ -1,13 +1,12 @@
 import os
 from datetime import datetime
+
 import numpy as np
 from dateutil.tz import tzlocal
+from ndx_photostim import SpatialLightModulator, PhotostimulationDevice, HolographicPattern, PhotostimulationSeries, \
+    PhotostimulationTable
 from pynwb import NWBFile, NWBHDF5IO
-from pynwb.testing import TestCase, remove_test_file
-
-from ndx_photostim import SpatialLightModulator, PhotostimulationDevice, HolographicPattern, PhotostimulationSeries, PhotostimulationTable
-# from file_classes import SpatialLightModulator, PhotostimulationDevice, HolographicPattern, PhotostimulationSeries, \
-#     PhotostimulationTable
+from pynwb.testing import TestCase
 
 
 class TestIO(TestCase):

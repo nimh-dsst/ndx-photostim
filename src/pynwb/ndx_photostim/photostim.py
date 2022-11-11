@@ -1,18 +1,15 @@
-import os
 from collections.abc import Iterable
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from hdmf.utils import docval, getargs, popargs, popargs_to_dict, get_docval
-from pynwb import register_class, load_namespaces
-from pynwb import register_map
+from pynwb import register_class
 from pynwb.base import TimeSeries
 from pynwb.core import DynamicTable
 from pynwb.device import Device
 from pynwb.file import NWBContainer
-from pynwb.io.base import TimeSeriesMap
-from pynwb.io.core import NWBContainerMapper
+
 namespace = 'ndx-photostim'
 
 @register_class('SpatialLightModulator', namespace)

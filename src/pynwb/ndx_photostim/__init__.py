@@ -1,18 +1,6 @@
 import os
-from collections.abc import Iterable
 
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-from hdmf.utils import docval, getargs, popargs, popargs_to_dict, get_docval
-from pynwb import register_class, load_namespaces
-from pynwb import register_map
-from pynwb.base import TimeSeries
-from pynwb.core import DynamicTable
-from pynwb.device import Device
-from pynwb.file import NWBContainer
-from pynwb.io.base import TimeSeriesMap
-from pynwb.io.core import NWBContainerMapper
+from pynwb import load_namespaces
 
 # Set path of the namespace.yaml file to the expected install location
 ndx_photostim_specpath = os.path.join(

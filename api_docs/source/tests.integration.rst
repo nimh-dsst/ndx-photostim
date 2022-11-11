@@ -2,7 +2,7 @@ Integration
 =========================
 
 
-.. automodule:: tests.integration.test_photostim
+.. automodule:: tests.integration.test_integration
    :members:
    :undoc-members:
    :show-inheritance:

@@ -1,11 +1,9 @@
-import os
 from datetime import datetime
 import numpy as np
-from dateutil.tz import tzlocal
-from pynwb import NWBFile, NWBHDF5IO
-from pynwb.testing import TestCase, remove_test_file
-import matplotlib.pyplot as plt
-from ndx_photostim import SpatialLightModulator, PhotostimulationDevice, HolographicPattern, PhotostimulationSeries, PhotostimulationTable
+from ndx_photostim import SpatialLightModulator, PhotostimulationDevice, HolographicPattern, PhotostimulationSeries, \
+    PhotostimulationTable
+from pynwb import NWBFile
+from pynwb.testing import TestCase
 
 
 def get_SLM():
