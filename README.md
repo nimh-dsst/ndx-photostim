@@ -18,24 +18,16 @@ First, clone the `ndx_photostim` repository in the desired folder using the comm
 ```angular2svg
 git clone https://github.com/carlwharris/nwb-photostim.git
 ```
-Then use `python -m pip install -r requirements.txt -r requirements-dev.txt` to install the requisite
-python packages. To install `ndx_photostim`, run `python setup.py install`. The extension can then be imported into 
-scripts via `import ndx_photostim`. 
-
-## Tests & documentation
-
-Unit tests can be run via the command `pytest` from the root of the extension directory.
-
-To produce documentation for the extension from the YAML specification, run:
+Then, to install the requisite python packages and install the extension, run:
 ```angular2svg
-cd docs
-make fulldocs
+python -m pip install -r requirements.txt -r requirements-dev.txt
+python setup.py install
 ```
-This will generate documents, stored in `/docs/build`.
+The extension can then be imported into python via `import ndx_photostim`.
 
 ## Usage
 
-**For full example usage, see `[tutorial.ipynb](./tutorial.ipynb)`**
+**For full example usage, see [tutorial.ipynb](./tutorial.ipynb)**
 
 Below is example code to:
 1. Create a device used in photostimulation
@@ -46,25 +38,27 @@ Below is example code to:
 
 
 ```python
-from pynwb import NWBFile, NWBHDF5IO
-from ndx_photostim import SpatialLightModulator, PhotostimulationDevice, HolographicPattern, PhotostimulationSeries, PhotostimulationTable
 import numpy as np
 from dateutil.tz import tzlocal
 from datetime import datetime
+from pynwb import NWBFile, NWBHDF5IO
+from ndx_photostim import SpatialLightModulator, PhotostimulationDevice, HolographicPattern, \
+    PhotostimulationSeries, PhotostimulationTable
 
 # create an example NWB file
-nwbfile = NWBFile('my first synthetic recording', 'EXAMPLE_ID', datetime.now(tzlocal()))
+nwbfile = NWBFile('nwb-photostim_example', 'EXAMPLE_ID', datetime.now(tzlocal()))
 
 # store the spatial light modulator used
-slm = SpatialLightModulator(name='example_SLM', description="example SLM", manufacturer="SLM manufacturer", size=[500, 500])
+slm = SpatialLightModulator(name='example_SLM', description="example SLM", manufacturer="SLM manufacturer",
+                            size=[500, 500])
 
 # create a container for the device used for photostimulation, and link the SLM to it
-photostim_dev = PhotostimulationDevice(name='photostimulation_device', description="example photostimulation device",
-                                       manufacturer="device manufacturer", type='LED', wavelength=320, opsin="example opsin")
-photostim_dev.add_slm(slm)
+device = PhotostimulationDevice(name="device", description="...", manufacturer="manufacturer", type="LED",
+                                wavelength=320, opsin='test_opsin', power=10, peak_pulse_energy=20, pulse_rate=5)
+device.add_slm(slm)
 
 # add the device to the NWB file
-nwbfile.add_device(photostim_dev)
+nwbfile.add_device(device)
 
 # simulate a mask of ROIs corresponding to stimulated regions in the FOV (5 ROIs on a 50x50 pixel image)
 image_mask_roi = np.zeros((50, 50))
@@ -74,49 +68,71 @@ for _ in range(5):
     image_mask_roi[x:x + 5, y:y + 5] = 1
 
 # store the stimulation as "pattern_1"
-hp = HolographicPattern(name='pattern 1', image_mask_roi=image_mask_roi)
+hp = HolographicPattern(name='pattern_1', image_mask_roi=image_mask_roi)
 
 # show the mask
 hp.show_mask()
 
 # store the time steps in which 'hp' was presented (seconds 10-20 and 35-40)
-stim_series = PhotostimulationSeries(name="series 2", format='interval',  holographic_pattern=hp)
+stim_series = PhotostimulationSeries(name="series 2", format='interval', pattern=hp,
+                                     stimulus_method="stim_method", sweep_pattern="...", time_per_sweep=10,
+                                     num_sweeps=20)
 stim_series.add_interval(10, 20)
 stim_series.add_interval(35, 40)
 
 # add the stimulus to the NWB file
 nwbfile.add_stimulus(stim_series)
 
-# create a table to store the time series/patterns for all stimuli together, along with experiment-specific parameters
-stim_table = PhotostimulationTable(name='test', description='test desc', photostimulation_device=photostim_dev, 
-                           stimulus_method='asas', sweeping_method="sweeping_method", time_per_sweep=0.01, num_sweeps=10)
+# create a table to store the time series/patterns for all stimuli together, along with experiment-specific
+# parameters
+stim_table = PhotostimulationTable(name="test_table", description="test_description", device=device)
 
 # add the stimulus to the table
 stim_table.add_series(stim_series)
 
 # plot the timestamps when the stimulus was presented
-stim_table.plot()
+stim_table.plot_presentation_times()
 
 # create a processing module and add the PresentationTable to it
 module = nwbfile.create_processing_module(name="photostimulation", description="example photostimulation table")
 module.add(stim_table)
 
 # write to an NWB file and read it back
-with NWBHDF5IO("photostim_example.nwb", "w") as io:
+with NWBHDF5IO("example_file.nwb", "w") as io:
     io.write(nwbfile)
 
-with NWBHDF5IO("photostim_example.nwb", "r", load_namespaces=True) as io:
+with NWBHDF5IO("example_file.nwb", "r", load_namespaces=True) as io:
     read_nwbfile = io.read()
 
-# Check the file & processing module
-print(read_nwbfile)
-print(read_nwbfile.processing['holographic_photostim'])
-
+    # Check the file & processing module
+    print(read_nwbfile)
+    print(read_nwbfile.processing['photostimulation'])
 ```
+## Running tests
 
----
+Unit and integration tests can run via the command `pytest` from the root of the extension directory. In addition,
+`pytest` will also test that the example section of this document functions runs.
 
 
+### Specification docs
+
+Documentation for the extension's specification, which is based on the YAML files, is generated and stored in
+the `./docs` folder. To generate this documentation, navigate to this folder (i.e., `cd docs`) and run the command
+```angular2svg
+make fulldoc
+```
+This will produce documentation in `./docs/build`, which can be accessed via the 
+`./docs/build/html/index.html` file.
+
+### API docs
+
+To generate documentation for the Python API, we use Sphinx and a template from ReadTheDocs. API documentation can
+be created by running 
+```angular2svg
+sphinx-build -b html api_docs/source/ api_docs/build/
+```
+from the home folder. As with the specification docs, documentation is stored in `./api_docs/build`. Select 
+`./api_docs/build/html/index.html` to access the API documentation in a website format.
 
 This extension was created using [ndx-template](https://github.com/nwb-extensions/ndx-template).
 
