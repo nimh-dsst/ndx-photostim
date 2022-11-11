@@ -1,18 +1,15 @@
 import os
-from datetime import datetime
-import numpy as np
-from dateutil.tz import tzlocal
-from pynwb import NWBFile, NWBHDF5IO
 from pynwb.testing import TestCase
-
-from ndx_photostim import SpatialLightModulator, PhotostimulationDevice, HolographicPattern, PhotostimulationSeries, PhotostimulationTable
-# from file_classes import SpatialLightModulator, PhotostimulationDevice, HolographicPattern, PhotostimulationSeries, \
-#     PhotostimulationTable
-
-
 
 def test_example_usage():
     '''Test example use script from README.'''
+
+    import numpy as np
+    from dateutil.tz import tzlocal
+    from datetime import datetime
+    from pynwb import NWBFile, NWBHDF5IO
+    from ndx_photostim import SpatialLightModulator, PhotostimulationDevice, HolographicPattern, \
+        PhotostimulationSeries, PhotostimulationTable
 
     # create an example NWB file
     nwbfile = NWBFile('nwb-photostim_example', 'EXAMPLE_ID', datetime.now(tzlocal()))
@@ -22,13 +19,12 @@ def test_example_usage():
                                 size=[500, 500])
 
     # create a container for the device used for photostimulation, and link the SLM to it
-    photostim_dev = PhotostimulationDevice(name="device", description="...", manufacturer="manufacturer",
-                                 type="LED", wavelength=320, opsin='test_opsin', power=10,
-                                 peak_pulse_energy=20, pulse_rate=5)
-    photostim_dev.add_slm(slm)
+    device = PhotostimulationDevice(name="device", description="...", manufacturer="manufacturer", type="LED",
+                                    wavelength=320, opsin='test_opsin', power=10, peak_pulse_energy=20, pulse_rate=5)
+    device.add_slm(slm)
 
     # add the device to the NWB file
-    nwbfile.add_device(photostim_dev)
+    nwbfile.add_device(device)
 
     # simulate a mask of ROIs corresponding to stimulated regions in the FOV (5 ROIs on a 50x50 pixel image)
     image_mask_roi = np.zeros((50, 50))
@@ -53,8 +49,9 @@ def test_example_usage():
     # add the stimulus to the NWB file
     nwbfile.add_stimulus(stim_series)
 
-    # create a table to store the time series/patterns for all stimuli together, along with experiment-specific parameters
-    stim_table = PhotostimulationTable(name='test', description='test desc', device=photostim_dev)
+    # create a table to store the time series/patterns for all stimuli together, along with experiment-specific
+    # parameters
+    stim_table = PhotostimulationTable(name="test_table", description="test_description", device=device)
 
     # add the stimulus to the table
     stim_table.add_series(stim_series)

@@ -1,20 +1,19 @@
+import os
 from collections.abc import Iterable
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from hdmf.utils import docval, getargs, popargs, popargs_to_dict, get_docval
-from pynwb import register_class, load_namespaces, register_map
+from pynwb import register_class, load_namespaces
+from pynwb import register_map
 from pynwb.base import TimeSeries
 from pynwb.core import DynamicTable
 from pynwb.device import Device
 from pynwb.file import NWBContainer
 from pynwb.io.base import TimeSeriesMap
 from pynwb.io.core import NWBContainerMapper
-
-ns_path = "test.namespace.yaml"
-load_namespaces(ns_path)
-
-namespace = 'test'
+namespace = 'ndx-photostim'
 
 @register_class('SpatialLightModulator', namespace)
 class SpatialLightModulator(Device):
@@ -36,7 +35,6 @@ class SpatialLightModulator(Device):
         size = popargs('size', kwargs)
         super().__init__(**kwargs)
         self.size = size
-
 
 @register_class('PhotostimulationDevice', namespace)
 class PhotostimulationDevice(Device):
@@ -145,9 +143,8 @@ class HolographicPattern(NWBContainer):
             if args_to_set['dimension'] is None:
                 args_to_set['dimension'] = mask_dim
 
-            if len(np.setdiff1d(np.unique(args_to_set['image_mask_roi']), np.array([0, 1]))) > 0:
-                if len(np.setdiff1d(np.unique(args_to_set['image_mask_roi']), np.array([0., 1.]))) > 0:
-                    raise ValueError("'image_mask_roi' data must be either 0 (off) or 1 (on)")
+            if len(np.setdiff1d(np.unique((args_to_set['image_mask_roi'].astype(int))), np.array([0, 1]))) > 0:
+                raise ValueError("'image_mask_roi' data must be either -1 (offset) or 1 (onset)")
 
         for key, val in args_to_set.items():
             setattr(self, key, val)
@@ -229,15 +226,6 @@ class HolographicPattern(NWBContainer):
                 pixel_mask.append([x, y, 1])
             it.iternext()
         return pixel_mask
-
-
-@register_map(HolographicPattern)
-class HolographicPatternMap(NWBContainerMapper):
-
-    def __init__(self, spec):
-        super().__init__(spec)
-        pixel_roi_spec = self.spec.get_dataset('pixel_roi')
-        self.map_spec('roi_size', pixel_roi_spec.get_attribute('roi_size'))
 
 
 @register_class('PhotostimulationSeries', namespace)
@@ -382,11 +370,11 @@ class PhotostimulationSeries(TimeSeries):
 
     @docval({'name': 'timestamp', 'type': (int, float, Iterable), 'doc': ("")})
     def add_onset(self, **kwargs):
-        """
+        '''
         Denote stimulation at time 'time', where time is a number or list of numbers. If type is 'series', add 1 to
         'data' and 'time' to 'timestamps'. If format is 'interval', call 'add_interval' for the interval from 'time'
         to 'time+stimulus_duration'.
-        """
+        '''
         if self.stimulus_duration is None:
             raise ValueError("Cannot add presentation to PhotostimulationSeries without 'stimulus_duration'")
 
@@ -403,7 +391,7 @@ class PhotostimulationSeries(TimeSeries):
                 self.__interval_timestamps.append(ts)
 
     def to_dataframe(self):
-        """Display 'data' and 'timestamps' side by side as a pandas dataframe. If 'timestamps' is not specified, calculate it using 'rate'."""
+        '''Display 'data' and 'timestamps' side by side as a pandas dataframe. If 'timestamps' is not specified, calculate it using 'rate'.'''
         data = np.array(self.data)
         ts = np.array(self.timestamps)
 
@@ -473,17 +461,6 @@ class PhotostimulationSeries(TimeSeries):
     @property
     def timestamps(self):
         return self.__interval_timestamps
-
-
-@register_map(PhotostimulationSeries)
-class PhotostimulationSeriesMap(TimeSeriesMap):
-
-    def __init__(self, spec):
-        super().__init__(spec)
-        stim_method_spec = self.spec.get_dataset('stimulus_method')
-        self.map_spec('sweep_pattern', stim_method_spec.get_attribute('sweep_pattern'))
-        self.map_spec('time_per_sweep', stim_method_spec.get_attribute('time_per_sweep'))
-        self.map_spec('num_sweeps', stim_method_spec.get_attribute('num_sweeps'))
 
 
 @register_class('PhotostimulationTable', namespace)

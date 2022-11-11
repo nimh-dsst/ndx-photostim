@@ -4,7 +4,7 @@ import numpy as np
 from dateutil.tz import tzlocal
 from pynwb import NWBFile, NWBHDF5IO
 from pynwb.testing import TestCase, remove_test_file
-
+import matplotlib.pyplot as plt
 from ndx_photostim import SpatialLightModulator, PhotostimulationDevice, HolographicPattern, PhotostimulationSeries, PhotostimulationTable
 
 
@@ -283,3 +283,4 @@ class TestPhotostimulationTable(TestCase):
         sp.add_series([s1, s2, s3])
 
         sp.plot_presentation_times()
+        plt.close()
