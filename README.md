@@ -1,11 +1,16 @@
 # ndx-photostim Extension for NWB
 
-<img src="./docs/images/ext.png" width="40%" style="margin: 0.5em 0.5em 0.5em 0.5em; float:right">
+<div style="display:inline">
+<div style="display:inline-grid">
+<img src="./docs/images/nwb.png" height="60em" style="margin: 0em 0em 0em 0em; " align="right">
+</div>
 This is a <a href="https://www.nwb.org/">NeuroData Without Borders (NWB)</a> extension for storing data and metadata from <a href="https://www.nature.com/articles/nmeth.3217">holographic photostimulation</a>
 methods. It includes containers for storing photostimulation-specific device parameters, holographic patterns 
 (either 2D or 3D), and time series data related to photostimulation.
+<img src="./docs/images/ext.png" height="60em" style="margin: 0em 0em 0em 0em;" align="right">
+</div>
 
-We release five <a href="https://pynwb.readthedocs.io/en/stable/">PyNWB</a> containers as part of this extension:
+<br>We release five <a href="https://pynwb.readthedocs.io/en/stable/">PyNWB</a> containers as part of this extension:
 
 * Two containers are used to store **device-specific metadata**: `SpatialLightModulator` and `PhotostimulationDevice`.
 * `HolographicPattern` stores the **holographic pattern** used in stimulation.
@@ -15,7 +20,7 @@ We release five <a href="https://pynwb.readthedocs.io/en/stable/">PyNWB</a> cont
 
 ## Background
 
-<img src="./docs/images/Cap1.PNG" width="40%" align="left" style=" margin:0.5em 0.5em 0.5em 0.5em;">
+<img src="./docs/images/Cap1.PNG" width="225em" align="left" style=" margin:0.5em 0.5em 0.5em 0.5em;">
 State-of-the-art <a href="https://www.nature.com/articles/s41467-017-01031-3">holographic photostimulation methods</a>, used in concert with <a href="https://www.nature.com/articles/nmeth818">two-photon imaging</a>, 
 allow unprecedented 
 control and measurement of cell activity in the living brain. Methods for managing data for two-photon imaging 
