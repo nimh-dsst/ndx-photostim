@@ -1,6 +1,6 @@
 # ndx-photostim Extension for NWB
 
-<img src="./docs/images/ext.PNG" width="40%" style="margin: 0.5em 0.5em 0.5em 0;" align="right">
+<img src="./docs/images/ext.png" width="40%" style="margin: 0.5em 0.5em 0.5em 0;" align="right">
 This is a NeuroData Without Borders (NWB) extension for storing data and metadata from holographic photostimulation 
 methods. It includes containers for storing photostimulation-specific device parameters, holographic patterns 
 (either 2D or 3D), and time series data related to photostimulation.
