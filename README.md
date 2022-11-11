@@ -1,37 +1,38 @@
 # ndx-photostim Extension for NWB
 
-<img src="./docs/images/ext.png" width="40%" style="margin: 0.5em 0.5em 0.5em 0;" align="right">
-This is a NeuroData Without Borders (NWB) extension for storing data and metadata from holographic photostimulation 
+<img src="./docs/images/ext.png" width="40%" style="margin: 0.5em 0.5em 0.5em 0.5em; float:right">
+<p>This is a <a href="https://www.nwb.org/">NeuroData Without Borders (NWB)</a> extension for storing data and metadata from <a href="https://www.nature.com/articles/nmeth.3217">holographic photostimulation</a>
 methods. It includes containers for storing photostimulation-specific device parameters, holographic patterns 
-(either 2D or 3D), and time series data related to photostimulation.
+(either 2D or 3D), and time series data related to photostimulation.</p>
 
-We release five NWB containers as part of this extension:
+We release five <a href="https://pynwb.readthedocs.io/en/stable/">PyNWB</a> containers as part of this extension:
 
-* Two containers are used to store **device-specific metadata**, `SpatialLightModulator` and `PhotostimulationDevice`.
-* `HolographicPattern` is stores the **stimulation pattern**.
+* Two containers are used to store **device-specific metadata**: `SpatialLightModulator` and `PhotostimulationDevice`.
+* `HolographicPattern` stores the **holographic pattern** used in stimulation.
 * `PhotostimulationSeries` contains the **time series data** corresponding to the presentation of a given stimulus (where the stimulus is represented by a `HolographicPattern` container linked to the `PhotostimulationSeries`).
-* We group **all time series & patterns for a given experiment** together using the `PhotostimulationTable` container. This object is a dynamic table, where each row in the table contains a `PhotostimulationSeries`. Additionally, the table links to the corresponding `StimulationDevice` used to generate patterns and record results.
+* We group **all time series & patterns for a given experiment** together using the `PhotostimulationTable` container. This object is a dynamic table, where each row in the table corresponds to a single `PhotostimulationSeries`. Additionally, the table links to the `StimulationDevice` used in the experiment.
 
 
 ## Background
 
 <img src="./docs/images/Cap1.PNG" width="40%" align="left" style=" margin:0.5em 0.5em 0.5em 0.5em;">
-State-of-the-art holographic photostimulation methods, used in concert with two-photon imaging, allow unprecedented 
+State-of-the-art <a href="https://www.nature.com/articles/s41467-017-01031-3">holographic photostimulation methods</a>, used in concert with <a href="https://www.nature.com/articles/nmeth818">two-photon imaging</a>, 
+allow unprecedented 
 control and measurement of cell activity in the living brain. Methods for managing data for two-photon imaging 
 experiments are improving, but there is little to no standardization of data for holographic stimulation methods. 
 Stimulation in vivo depends on fine-tuning many experimental variables, which poses a challenge for reproducibility 
-and data sharing between researchers. To improve standardization of photostimulation data storage and processing, 
-we release in this repository a generic data format and pipeline for simultaneous holographic stimulation experiments, 
+and data sharing between researchers. To improve <a href="https://www.sciencedirect.com/science/article/pii/S0896627321009557">standardization</a> of photostimulation data storage and processing, 
+we release this extension as a generic data format for simultaneous holographic stimulation experiments, 
 using the NWB format to store experimental details and data relating to both acquisition 
 and photostimulation.
 
 ## Installation
 
-First, clone the `ndx_photostim` repository in the desired folder using the command
+To install the extension, first clone the `ndx_photostim` repository to the desired folder using the command
 ```angular2svg
 git clone https://github.com/carlwharris/nwb-photostim.git
 ```
-Then, to install the requisite python packages and install the extension, run:
+Then, to install the requisite python packages and extension, run:
 ```angular2svg
 python -m pip install -r requirements.txt -r requirements-dev.txt
 python setup.py install
@@ -123,30 +124,37 @@ with NWBHDF5IO("example_file.nwb", "r", load_namespaces=True) as io:
 ```
 ## Running tests
 
-Unit and integration tests can run via the command `pytest` from the root of the extension directory. In addition,
-`pytest` will also run a test of the example usage code above.
+<a href="https://pynwb.readthedocs.io/en/stable/software_process.html#continuous-integration">Unit and integration
+tests</a> are implemented using <a href="https://docs.pytest.org/en/7.2.x/">pytest</a>, and can be run via the command 
+`pytest` from the root of the extension directory. In addition, the
+`pytest` command will also run a test of the example code above.
 
 ## Documentation
 
 ### Specification
 
-Documentation for the extension's specification, which is based on the YAML files, is generated and stored in
-the `./docs` folder. To generate this documentation, navigate to this folder (i.e., `cd docs`) and run the command
+
+Documentation for the extension's <a href="https://schema-language.readthedocs.io/en/latest/">specification</a>, which is based on the YAML files, is generated and stored in
+the `./docs` folder. To create it, run the following from the home directory:
 ```angular2svg
+cd docs
 make fulldoc
 ```
-This will produce documentation in `./docs/build`, which can be accessed via the 
+This will save documentation to the `./docs/build` folder, and can be accessed via the 
 `./docs/build/html/index.html` file.
 
 ### API
 
-To generate documentation for the Python API (stores in `./api_docs`), we use Sphinx and a template from ReadTheDocs. API documentation can
+To generate documentation for the Python API (stores in `./api_docs`), we use <a href="https://www.sphinx-doc.org/en/master/">Sphinx</a> 
+and a template from <a href="https://readthedocs.org/">ReadTheDocs</a>. API documentation can
 be created by running 
 ```angular2svg
 sphinx-build -b html api_docs/source/ api_docs/build/
 ```
-from the home folder. As with the specification docs, documentation is stored in `./api_docs/build`. Select 
+from the home folder. Similar to the specification docs, API documentation is stored in `./api_docs/build`. Select 
 `./api_docs/build/index.html` to access the API documentation in a website format.
+
+
 
 This extension was created using [ndx-template](https://github.com/nwb-extensions/ndx-template).
 
