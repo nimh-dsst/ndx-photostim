@@ -1,16 +1,26 @@
 # ndx-photostim Extension for NWB
 
-This is an NWB extension for storing holographic photostimulation data.
+This is a NeuroData Without Borders (NWB) extension for storing data and metadata from holographic photostimulation 
+methods. It includes containers for storing photostimulation-specific device parameters, holographic patterns 
+(either 2D or 3D), and time series data related to photostimulation.
 
-* **Device metadata** Two containers are used to store device-specific metadata, `SpatialLightModulator` and `PhotostimulationDevice`,
-* **Stimulation pattern** A container called `HolographicPattern` is used to store the pattern used in the stimulation.
-* **Presentation data** `PhotostimulationSeries` is used to store the timeseries data corresponding to the presentation for a given simulation pattern
-(represented by a `HolographicPattern` container than is stored within `PhotostimulationSeries`).
-* **Multiple stimulation patterns** We group all `PhotostimulationSeries` containers (i.e., the set of stimulation time series/pattern pairs), along
-with the `StimulationDevice` used to collect the patterns, into a dynamic table called `PhotostimulationTable`. This allows all
-stimulation data and metadata for a given experiment to be grouped together clearly.
+We release five NWB containers as part of this extension:
 
-**For full example use, see [tutorial.ipynb](./tutorial.ipynb)**.
+* Two containers are used to store **device-specific metadata**, `SpatialLightModulator` and `PhotostimulationDevice`,
+* `HolographicPattern` is used to store the **stimulation pattern**.
+* `PhotostimulationSeries` contains the **time series data** corresponding to the presentation of a given stimulus (where the stimulus is represented by a `HolographicPattern` container linked to the `PhotostimulationSeries`).
+* We group **all the time series/patterns for a given experiment** together using the `PhotostimulationTable` container. This object is a dynamic table, where each row in the table contains a `PhotostimulationSeries`. Additionally, the table links to the `StimulationDevice` used to generate the patterns and record the results contained in the table.
+
+## Background
+
+State-of-the-art holographic photostimulation methods, used in concert with two-photon imaging, allow unprecedented 
+control and measurement of cell activity in the living brain. Methods for managing data for two-photon imaging 
+experiments are improving, but there is little to no standardization of data for holographic stimulation methods. 
+Stimulation in vivo depends on fine-tuning many experimental variables, which poses a challenge for reproducibility 
+and data sharing between researchers. To improve standardization of photostimulation data storage and processing, 
+we release in this repository a generic data format and pipeline for simultaneous holographic stimulation experiments, 
+using the NWB format to store experimental details and data relating to both acquisition 
+and photostimulation. 
 
 ## Installation
 
@@ -23,7 +33,7 @@ Then, to install the requisite python packages and install the extension, run:
 python -m pip install -r requirements.txt -r requirements-dev.txt
 python setup.py install
 ```
-The extension can then be imported into python via `import ndx_photostim`.
+The extension can then be imported into python scripts via `import ndx_photostim`.
 
 ## Usage
 
@@ -111,10 +121,11 @@ with NWBHDF5IO("example_file.nwb", "r", load_namespaces=True) as io:
 ## Running tests
 
 Unit and integration tests can run via the command `pytest` from the root of the extension directory. In addition,
-`pytest` will also test that the example section of this document functions runs.
+`pytest` will also run a test of the example usage code above.
 
+## Documentation
 
-### Specification docs
+### Specification
 
 Documentation for the extension's specification, which is based on the YAML files, is generated and stored in
 the `./docs` folder. To generate this documentation, navigate to this folder (i.e., `cd docs`) and run the command
@@ -124,15 +135,15 @@ make fulldoc
 This will produce documentation in `./docs/build`, which can be accessed via the 
 `./docs/build/html/index.html` file.
 
-### API docs
+### API
 
-To generate documentation for the Python API, we use Sphinx and a template from ReadTheDocs. API documentation can
+To generate documentation for the Python API (stores in `./api_docs`), we use Sphinx and a template from ReadTheDocs. API documentation can
 be created by running 
 ```angular2svg
 sphinx-build -b html api_docs/source/ api_docs/build/
 ```
 from the home folder. As with the specification docs, documentation is stored in `./api_docs/build`. Select 
-`./api_docs/build/html/index.html` to access the API documentation in a website format.
+`./api_docs/build/index.html` to access the API documentation in a website format.
 
 This extension was created using [ndx-template](https://github.com/nwb-extensions/ndx-template).
 
