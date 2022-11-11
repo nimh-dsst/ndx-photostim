@@ -1,9 +1,9 @@
 # ndx-photostim Extension for NWB
 
 <img src="./docs/images/ext.png" width="40%" style="margin: 0.5em 0.5em 0.5em 0.5em; float:right">
-<p>This is a <a href="https://www.nwb.org/">NeuroData Without Borders (NWB)</a> extension for storing data and metadata from <a href="https://www.nature.com/articles/nmeth.3217">holographic photostimulation</a>
+This is a <a href="https://www.nwb.org/">NeuroData Without Borders (NWB)</a> extension for storing data and metadata from <a href="https://www.nature.com/articles/nmeth.3217">holographic photostimulation</a>
 methods. It includes containers for storing photostimulation-specific device parameters, holographic patterns 
-(either 2D or 3D), and time series data related to photostimulation.</p>
+(either 2D or 3D), and time series data related to photostimulation.
 
 We release five <a href="https://pynwb.readthedocs.io/en/stable/">PyNWB</a> containers as part of this extension:
 
