@@ -1,16 +1,30 @@
-.. cdsd documentation master file, created by
+.. nwb-photostim documentation master file, created by
    sphinx-quickstart on Thu Nov 10 11:19:35 2022.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to cdsd's documentation!
-================================
+Welcome to nwb-photostim's API documentation!
+=============================================
+
+.. toctree::
+    :maxdepth: 8
+
+    description
 
 .. toctree::
    :maxdepth: 4
    :caption: Contents:
 
-   modules
+   ndx_photostim
+   tests
+
+.. toctree::
+    :maxdepth: 2
+    :caption: History & Legal
+
+    release_notes
+    credits
+
 
 Indices and tables
 ==================
