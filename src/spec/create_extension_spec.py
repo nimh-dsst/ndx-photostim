@@ -1,11 +1,7 @@
 # -*- coding: utf-8 -*-
 import os.path
 
-# TODO: import other spec classes as needed
-# from pynwb.spec import NWBDatasetSpec, NWBLinkSpec, NWBDtypeSpec, NWBRefSpec
-from pynwb.spec import NWBNamespaceBuilder, NWBGroupSpec, NWBAttributeSpec, NWBLinkSpec, NWBDatasetSpec
-from pynwb.spec import NWBRefSpec
-from pynwb.spec import export_spec
+from pynwb.spec import NWBNamespaceBuilder, NWBGroupSpec, NWBAttributeSpec, NWBLinkSpec, NWBDatasetSpec, NWBRefSpec, export_spec
 
 
 def main():
@@ -18,7 +14,6 @@ def main():
         contact=list(map(str.strip, """carlwharris1@gmail.com""".split(',')))
     )
 
-    # TODO: specify the neurodata_types that are used by the extension as well
     # as in which namespace they are found.
     # this is similar to specifying the Python modules that need to be imported
     # to use your new data types.
@@ -37,7 +32,6 @@ def main():
     ns_builder.include_type("Device", namespace="core")
     ns_builder.include_type("TimeIntervals", namespace="core")
 
-    # TODO: define your new data types
     # see https://pynwb.readthedocs.io/en/latest/extensions.html#extending-nwb
     # for more information
 
@@ -190,7 +184,6 @@ def main():
     output_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'spec'))
     export_spec(ns_builder, new_data_types, output_dir)
     print('Spec files generated. Please make sure to rerun `pip install .` to load the changes.')
-
 
 
 if __name__ == '__main__':

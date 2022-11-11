@@ -1,4 +1,4 @@
-ndx\_photostim package
+ndx\_photostim
 ======================
 
 package

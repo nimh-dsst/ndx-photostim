@@ -1,5 +1,5 @@
 import os
-from pynwb.testing import TestCase
+
 
 def test_example_usage():
     '''Test example use script from README.'''

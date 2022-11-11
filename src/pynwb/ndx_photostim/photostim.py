@@ -33,6 +33,7 @@ class SpatialLightModulator(Device):
         super().__init__(**kwargs)
         self.size = size
 
+
 @register_class('PhotostimulationDevice', namespace)
 class PhotostimulationDevice(Device):
     """
@@ -140,8 +141,9 @@ class HolographicPattern(NWBContainer):
             if args_to_set['dimension'] is None:
                 args_to_set['dimension'] = mask_dim
 
-            if len(np.setdiff1d(np.unique((args_to_set['image_mask_roi'].astype(int))), np.array([0, 1]))) > 0:
-                raise ValueError("'image_mask_roi' data must be either -1 (offset) or 1 (onset)")
+            if len(np.setdiff1d(np.unique(args_to_set['image_mask_roi']), np.array([0, 1]))) > 0:
+                if len(np.setdiff1d(np.unique(args_to_set['image_mask_roi']), np.array([0., 1.]))) > 0:
+                    raise ValueError("'image_mask_roi' data must be either 0 (off) or 1 (on)")
 
         for key, val in args_to_set.items():
             setattr(self, key, val)
@@ -306,9 +308,9 @@ class PhotostimulationSeries(TimeSeries):
                 if len(kwargs['data']) != len(kwargs['timestamps']):
                     raise ValueError("'data' and 'timestamps' need to be the same length")
 
-                data_int_array = np.array(kwargs['data']).astype(int)
-                if len(np.setdiff1d(np.unique(data_int_array), np.array([-1, 1]))) > 0:
-                    raise ValueError("'interval' data must be either -1 (offset) or 1 (onset)")
+                if len(np.setdiff1d(np.unique(kwargs['data']), np.array([-1, 1]))) > 0:
+                    if len(np.setdiff1d(np.unique(kwargs['data']), np.array([-1., 1.]))) > 0:
+                        raise ValueError("'interval' data must be either -1 (offset) or 1 (onset)")
 
         # if using series format
         if kwargs['format'] == 'series':
@@ -333,9 +335,9 @@ class PhotostimulationSeries(TimeSeries):
                 if len(kwargs['data']) != len(kwargs['timestamps']):
                     raise ValueError("'data' and 'timestamps' need to be the same length")
 
-                data_int_array = np.array(kwargs['data']).astype(int)
-                if len(np.setdiff1d(np.unique(data_int_array), np.array([0, 1]))) > 0:
-                    raise ValueError("'series' data must be either 0 or 1")
+                if len(np.setdiff1d(np.unique(kwargs['data']), np.array([0, 1]))) > 0:
+                    if len(np.setdiff1d(np.unique(kwargs['data']), np.array([0., 1.]))) > 0:
+                        raise ValueError("'series' data must be either 0 or 1")
 
         keys_to_set = ('pattern', 'format', 'stimulus_duration',
                        'stimulus_method', 'sweep_pattern', 'time_per_sweep', 'num_sweeps')
@@ -561,14 +563,3 @@ class PhotostimulationTable(DynamicTable):
         ax.set_title(f"Presentation timestamps for PhotostimulationTable '{self.name}'")
         ax.xaxis.grid()
         plt.show()
-
-# @register_map(PhotostimulationTable)
-# class PhotostimulationTableMap(DynamicTableMap):
-#
-#     def __init__(self, spec):
-#         super().__init__(spec)
-#         stim_method_spec = self.spec.get_dataset('stimulus_method')
-#         # self.map_spec('stim_method', stim_method_spec)
-#         self.map_spec('sweeping_method', stim_method_spec.get_attribute('sweeping_method'))
-#         self.map_spec('time_per_sweep', stim_method_spec.get_attribute('time_per_sweep'))
-#         self.map_spec('num_sweeps', stim_method_spec.get_attribute('num_sweeps'))

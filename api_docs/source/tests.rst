@@ -1,9 +1,9 @@
-Tests
+tests
 ========================
 
-example use
+unit
 ----------
-.. automodule:: tests.example_use.test_example_use
+.. automodule:: tests.unit.test_unit
    :members:
    :undoc-members:
    :show-inheritance:
@@ -15,9 +15,9 @@ integration
    :undoc-members:
    :show-inheritance:
 
-unit
+example use
 ----------
-.. automodule:: tests.unit.test_unit
+.. automodule:: tests.example_use.test_example_use
    :members:
    :undoc-members:
    :show-inheritance:

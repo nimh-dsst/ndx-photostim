@@ -4,12 +4,13 @@ from ndx_photostim import SpatialLightModulator, PhotostimulationDevice, Hologra
     PhotostimulationTable
 from pynwb import NWBFile
 from pynwb.testing import TestCase
-
+from dateutil.tz import tzlocal
 
 def get_SLM():
     '''Return SpatialLightModulator container.'''
     slm = SpatialLightModulator(name="slm", size=np.array([1, 2]))
     return slm
+
 
 def get_photostim_device():
     '''Return PhotostimulationDevice containing SLM.'''
@@ -21,11 +22,13 @@ def get_photostim_device():
 
     return photostim_dev
 
+
 def get_holographic_pattern():
     '''Return example HolographicPattern with image_mask_roi'''
     image_mask_roi = TestHolographicPattern._create_image_mask_roi()
     hp = HolographicPattern(name='pattern', image_mask_roi=image_mask_roi, roi_size=5)
     return hp
+
 
 def get_photostim_series():
     '''Return example PhotostimulationSeries container.'''
@@ -36,11 +39,15 @@ def get_photostim_series():
                                               timestamps=[0.5, 1, 2, 4], format='interval')
     return photostim_series
 
+
 def get_series():
     '''Return example PhotostimulationSeries.'''
     hp = get_holographic_pattern()
-    series = PhotostimulationSeries(name="photosim series", format='interval', pattern=hp, data=[1, -1, 1, -1], timestamps=[0.5, 1, 2, 4], stimulus_method="stim_method", sweep_pattern="...", time_per_sweep=10, num_sweeps=20)
+    series = PhotostimulationSeries(name="photosim series", format='interval', pattern=hp, data=[1, -1, 1, -1],
+                                    timestamps=[0.5, 1, 2, 4], stimulus_method="stim_method", sweep_pattern="...",
+                                    time_per_sweep=10, num_sweeps=20)
     return series
+
 
 class TestSLM(TestCase):
     def test_init(self):
@@ -50,15 +57,17 @@ class TestSLM(TestCase):
         with self.assertRaises(ValueError):
             SpatialLightModulator(name="slm", size=np.array([[1, 2], [3, 4]]))
 
+
 class TestPhotostimulationDevice(TestCase):
     def test_init(self):
         '''Test PhotostimulationDevice initialization and the 'add_slm' method.'''
         dev = PhotostimulationDevice(name="device", description="...", manufacturer="manufacturer",
-                                     type="LED", wavelength=320, opsin='test_opsin',power=10,
+                                     type="LED", wavelength=320, opsin='test_opsin', power=10,
                                      peak_pulse_energy=20, pulse_rate=5)
 
         slm = get_SLM()
         dev.add_slm(slm)
+
 
 class TestHolographicPattern(TestCase):
     def test_init_MaskROI(self):
@@ -128,30 +137,33 @@ class TestHolographicPattern(TestCase):
         image_mask_roi[x:x + 5, y:y + 5] = 1
         return image_mask_roi
 
+
 class TestPhotostimulationSeries(TestCase):
     def test_init(self):
         '''Test initialization of PhotostimulationSeries under different data, format, and time specifications.'''
         hp = get_holographic_pattern()
-        PhotostimulationSeries(name="photosim series", format='interval', pattern=hp, data=[1, -1, 1, -1], timestamps=[0.5, 1, 2, 4], stimulus_method="stim_method", sweep_pattern="...", time_per_sweep=10, num_sweeps=20)
+        PhotostimulationSeries(name="photosim series", format='interval', pattern=hp, data=[1, -1, 1, -1],
+                               timestamps=[0.5, 1, 2, 4], stimulus_method="stim_method", sweep_pattern="...",
+                               time_per_sweep=10, num_sweeps=20)
 
         PhotostimulationSeries(name="photosim series", pattern=hp, format='series', data=[0, 0, 0, 1, 1, 0],
                                rate=10., stimulus_duration=0.05)
 
         with self.assertRaises(ValueError):
             PhotostimulationSeries(name="photosim series", pattern=hp, format='series', data=[0, 0, 0, 1, 1, 0],
-                               rate=10.)
+                                   rate=10.)
 
             PhotostimulationSeries(name="photosim series", pattern=hp, format='series')
 
         PhotostimulationSeries(name="photosim series", pattern=hp, format='series',
-                                                  stimulus_duration = 0.05, data=[0, 0, 0, 1, 1, 0],
-                                                  timestamps=[0, 0.5, 1, 1.5, 3, 6])
+                               stimulus_duration=0.05, data=[0, 0, 0, 1, 1, 0],
+                               timestamps=[0, 0.5, 1, 1.5, 3, 6])
 
     def test_format_data(self):
         '''Test data validation for PhotostimulationSeries.'''
         hp = get_holographic_pattern()
         data = [1, -1, 1, -1]
-        timestamps=[0.5, 1, 2, 4]
+        timestamps = [0.5, 1, 2, 4]
 
         with self.assertRaises(ValueError):
             PhotostimulationSeries(name="photosim series", format='interval', pattern=hp, timestamps=timestamps)
@@ -161,11 +173,12 @@ class TestPhotostimulationSeries(TestCase):
         data = [1, -1, 1, 2]
         timestamps = [0.5, 1, 2, 4]
         with self.assertRaises(ValueError):
-            PhotostimulationSeries(name="photosim series", pattern=hp, format='interval', data=data, timestamps=timestamps)
+            PhotostimulationSeries(name="photosim series", pattern=hp, format='interval', data=data,
+                                   timestamps=timestamps)
 
         with self.assertRaises(ValueError):
             PhotostimulationSeries(name="photosim series", pattern=hp, format='series',
-                               data=[0, 0, 0, 1, 2, 0], rate=10.)
+                                   data=[0, 0, 0, 1, 2, 0], rate=10.)
 
     def test_add_interval(self):
         '''Test 'add_interval' method on 'interval' type series.'''
@@ -182,7 +195,8 @@ class TestPhotostimulationSeries(TestCase):
         assert empty_series.timestamps[1] == 20
         assert len(empty_series.timestamps) == 4
 
-        stim_series_2 = PhotostimulationSeries(name="series 2", format='interval',  data=[1, -1], timestamps=[1, 3], pattern=hp)
+        stim_series_2 = PhotostimulationSeries(name="series 2", format='interval', data=[1, -1], timestamps=[1, 3],
+                                               pattern=hp)
         stim_series_2.add_interval(10., 20.)
         stim_series_2.add_interval(35., 40.)
 
@@ -190,7 +204,7 @@ class TestPhotostimulationSeries(TestCase):
         '''Test 'add_onset' method on both 'interval' and 'series' formatted PhotostimulationSeries.'''
         hp = get_holographic_pattern()
 
-        ps = PhotostimulationSeries(name="photosim series",  format='series', pattern=hp, stimulus_duration=10)
+        ps = PhotostimulationSeries(name="photosim series", format='series', pattern=hp, stimulus_duration=10)
         ps.add_onset(10)
         ps.add_onset([30, 40, 50])
 
@@ -202,21 +216,21 @@ class TestPhotostimulationSeries(TestCase):
         ps.add_onset([30, 40, 50])
 
         assert all(ps.timestamps == np.array([10., 12., 30., 32., 40., 42., 50., 52.]))
-        assert all(ps.data == np.array([ 1., -1.,  1., -1.,  1., -1.,  1., -1.]))
+        assert all(ps.data == np.array([1., -1., 1., -1., 1., -1., 1., -1.]))
 
     def test_to_df(self):
         '''Test conversion to Pandas dataframe, showing data and timestamps in each columns.'''
         hp = get_holographic_pattern()
 
         ps = PhotostimulationSeries(name="photosim series", format='series', pattern=hp,
-                               data=[0, 0, 0, 1, 1, 0], rate=10., stimulus_duration=4)
+                                    data=[0, 0, 0, 1, 1, 0], rate=10., stimulus_duration=4)
         ps.to_dataframe()
 
-        ps = PhotostimulationSeries(name="photosim series",format='series', pattern=hp,
+        ps = PhotostimulationSeries(name="photosim series", format='series', pattern=hp,
                                     stimulus_duration=0.05, data=[0, 0, 0, 1, 1, 0], timestamps=[0, 0.5, 1, 1.5, 3, 6])
         ps.to_dataframe()
 
-        ps = PhotostimulationSeries(name="photosim series",format='interval', pattern=hp,  stimulus_duration=2)
+        ps = PhotostimulationSeries(name="photosim series", format='interval', pattern=hp, stimulus_duration=2)
         ps.add_onset([10, 40, 50])
         ps.to_dataframe()
 
@@ -224,18 +238,19 @@ class TestPhotostimulationSeries(TestCase):
         '''Test if helped function '_get_start_stop_list' correctly returns a list of the start and stop times, regardess of format and time specification.'''
         hp = get_holographic_pattern()
         ps = PhotostimulationSeries(name="photosim series", format='interval', pattern=hp, data=[1, -1, 1, -1],
-                               timestamps=[0.5, 1, 2, 4])
+                                    timestamps=[0.5, 1, 2, 4])
 
         ps._get_start_stop_list()
 
         ps = PhotostimulationSeries(name="photosim series", pattern=hp, format='series',
-                               data=[0, 0, 0, 1, 1, 0], rate=10., stimulus_duration=4)
+                                    data=[0, 0, 0, 1, 1, 0], rate=10., stimulus_duration=4)
         ps._get_start_stop_list()
 
         ps = PhotostimulationSeries(name="photosim series", pattern=hp,
-                                                  format='series', stimulus_duration=0.05,
-                                                  data=[0, 0, 0, 1, 1, 0], timestamps=[0, 0.5, 1, 1.5, 3, 6])
+                                    format='series', stimulus_duration=0.05,
+                                    data=[0, 0, 0, 1, 1, 0], timestamps=[0, 0.5, 1, 1.5, 3, 6])
         ps._get_start_stop_list()
+
 
 class TestPhotostimulationTable(TestCase):
     def test_init(self):
@@ -254,7 +269,7 @@ class TestPhotostimulationTable(TestCase):
                                     stimulus_duration=2, data=[1, -1, 1, -1], timestamps=[0.5, 1, 2, 4])
 
         [nwbfile.add_stimulus(s) for s in [s1, s2, s3]]
-        sp.add_series([s1, s2, s3])#, row_name=["row_1", "row_2", "row_3"])
+        sp.add_series([s1, s2, s3])  # , row_name=["row_1", "row_2", "row_3"])
 
         behavior_module = nwbfile.create_processing_module(
             name="holographic_photostim", description="initial data"
@@ -281,4 +296,3 @@ class TestPhotostimulationTable(TestCase):
         sp.add_series([s1, s2, s3])
 
         sp.plot_presentation_times()
-        plt.close()

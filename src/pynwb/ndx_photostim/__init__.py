@@ -1,5 +1,4 @@
 import os
-
 from pynwb import load_namespaces
 
 # Set path of the namespace.yaml file to the expected install location
@@ -22,9 +21,9 @@ if not os.path.exists(ndx_photostim_specpath):
 # Load the namespace
 load_namespaces(ndx_photostim_specpath)
 
-# TODO: import your classes here or define your class using get_class to make
 # them accessible at the package level
 # SpatialLightModulator = get_class('SpatialLightModulator', 'ndx-photostim')
 
 from . import io as __io  # noqa: E402,F401
-from .photostim import SpatialLightModulator, PhotostimulationDevice, HolographicPattern, PhotostimulationSeries, PhotostimulationTable
+from .photostim import SpatialLightModulator, PhotostimulationDevice, HolographicPattern, PhotostimulationSeries, \
+    PhotostimulationTable

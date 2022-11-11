@@ -25,5 +25,3 @@ class PhotostimulationSeriesMap(TimeSeriesMap):
         self.map_spec('sweep_pattern', stim_method_spec.get_attribute('sweep_pattern'))
         self.map_spec('time_per_sweep', stim_method_spec.get_attribute('time_per_sweep'))
         self.map_spec('num_sweeps', stim_method_spec.get_attribute('num_sweeps'))
-
-
