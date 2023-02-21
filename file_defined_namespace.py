@@ -158,7 +158,7 @@ ps = NWBGroupSpec(neurodata_type_def='PhotostimulationSeries',
                   quantity='*',
                   attributes=attribs,
                   datasets=[stim_method],
-                  groups=[hp])
+                  groups=[hp, hs])
 
 stim_col = NWBDatasetSpec(name='series',
                           doc=("PhotostimulationSeries object corresponding to the row."),

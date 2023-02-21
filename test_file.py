@@ -225,6 +225,12 @@ class TestHolographicPattern2(TestCase):
         ps2.show_mask()
         print('')
 
+        ps_series = PhotostimulationSeries(name="photosim series", format='interval', pattern=ps2, data=[1, -1, 1, -1],
+                               timestamps=[0.5, 1, 2, 4], stimulus_method="stim_method", sweep_pattern="...",
+                               time_per_sweep=10, num_sweeps=20)
+
+        print('')
+
 
 class TestPhotostimulationSeries(TestCase):
     def test_init(self):

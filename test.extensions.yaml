@@ -263,6 +263,29 @@ groups:
           be a rectangle or cuboid, with dimensions [width, height] or [width, height,
           depth]. This parameter is required when using 'pixel_roi'.
         required: false
+  - neurodata_type_def: HolographicSegmentation
+    neurodata_type_inc: NWBDataInterface
+    name: holographic_segmentation
+    doc: 'Container to store the pattern used in a photostimulation experiment. '
+    attributes:
+    - name: dimension
+      dtype: numeric
+      dims:
+      - - width
+        - height
+      - - width
+        - height
+        - depth
+      shape:
+      - - 2
+      - - 3
+      doc: Number of pixels on x, y, (and z) axes. Calculated automatically when ROI
+        is input using 'image_mask_roi.' Required when using 'pixel_roi.'
+      required: false
+    groups:
+    - neurodata_type_inc: HolographicPattern2
+      doc: Results from image segmentation of a specific imaging plane.
+      quantity: +
 - neurodata_type_def: PhotostimulationTable
   neurodata_type_inc: DynamicTable
   doc: "Table of to hold all of an experiment's PhotostimulationSeries objects. "

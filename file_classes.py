@@ -453,7 +453,7 @@ class PhotostimulationSeries(TimeSeries):
             {'name': 'stimulus_duration', 'type': (int, float),
              'doc': ("Duration (in sec) the stimulus is presented following onset. Must be specified if format is "
                      "'series'. "), 'default': None},
-            {'name': 'pattern', 'type': HolographicPattern, 'doc': ("HolographicPattern used as stimulation pattern.")},
+            {'name': 'pattern', 'type': (HolographicPattern, HolographicPattern2), 'doc': ("HolographicPattern used as stimulation pattern.")},
             {'name': 'stimulus_method', 'type': str,
              'doc': ("Scanning or scanless method for shaping optogenetic light (e.g., diffraction limited points, "
                      "3D shot, disks, etc.)."), 'default': None},
