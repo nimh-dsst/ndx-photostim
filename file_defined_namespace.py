@@ -16,6 +16,7 @@ ns_builder.include_type("Data", namespace="hdmf-common")
 ns_builder.include_type("ElementIdentifiers", namespace="hdmf-common")
 ns_builder.include_type("Device", namespace="core")
 ns_builder.include_type("TimeIntervals", namespace="core")
+ns_builder.include_type("PlaneSegmentation", namespace="core")
 
 size = NWBAttributeSpec(name='size',
                         doc=(
@@ -102,8 +103,23 @@ hp = NWBGroupSpec(neurodata_type_def='HolographicPattern',
                   neurodata_type_inc='NWBContainer',
                   name='pattern',
                   doc=("Container to store the pattern used in a photostimulation experiment. "),
-                  attributes=[dimension],
+                  attributes=[dimension, roi_size],
                   datasets=[image_mask_roi, pixel_roi])
+
+
+hp2 = NWBGroupSpec(neurodata_type_def='HolographicPattern2',
+                  neurodata_type_inc='PlaneSegmentation',
+                  name='pattern',
+                  doc=("Container to store the pattern used in a photostimulation experiment. "))
+
+hs = NWBGroupSpec(neurodata_type_def='HolographicSegmentation',
+                  neurodata_type_inc='NWBDataInterface',
+                  name='holographic_segmentation',
+                  groups=[NWBGroupSpec(doc=("Results from image segmentation of a specific imaging plane."),
+                                       neurodata_type_inc='HolographicPattern2', quantity='+')
+                          ],
+                attributes=[dimension],
+                  doc=("Container to store the pattern used in a photostimulation experiment. "))
 
 attribs = [NWBAttributeSpec(name='sweep_pattern',
                             doc=(
@@ -163,6 +179,8 @@ pt = NWBGroupSpec(neurodata_type_def='PhotostimulationTable',
 ns_builder.add_spec(ext_source, slm)
 ns_builder.add_spec(ext_source, psd)
 ns_builder.add_spec(ext_source, hp)
+ns_builder.add_spec(ext_source, hp2)
+ns_builder.add_spec(ext_source, hs)
 ns_builder.add_spec(ext_source, ps)
 ns_builder.add_spec(ext_source, pt)
 ns_builder.export(ns_path)

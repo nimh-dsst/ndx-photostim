@@ -5,9 +5,11 @@ import pandas as pd
 from hdmf.utils import docval, getargs, popargs, popargs_to_dict, get_docval
 from pynwb import register_class, load_namespaces, register_map
 from pynwb.base import TimeSeries
-from pynwb.core import DynamicTable
+from pynwb.core import DynamicTable, MultiContainerInterface
 from pynwb.device import Device
 from pynwb.file import NWBContainer
+from pynwb.ophys import PlaneSegmentation, ImagingPlane
+
 from pynwb.io.base import TimeSeriesMap
 from pynwb.io.core import NWBContainerMapper
 
@@ -84,6 +86,7 @@ class PhotostimulationDevice(Device):
             self.slm = slm
 
 
+
 @register_class('HolographicPattern', namespace)
 class HolographicPattern(NWBContainer):
     '''
@@ -151,6 +154,8 @@ class HolographicPattern(NWBContainer):
 
         for key, val in args_to_set.items():
             setattr(self, key, val)
+
+
 
     def show_mask(self):
         '''
@@ -229,6 +234,190 @@ class HolographicPattern(NWBContainer):
                 pixel_mask.append([x, y, 1])
             it.iternext()
         return pixel_mask
+
+
+@register_class('HolographicPattern2', namespace)
+class HolographicPattern2(PlaneSegmentation):
+    '''
+    Container to store the pattern used in a photostimulation experiment.
+    '''
+
+    @docval(*get_docval(PlaneSegmentation.__init__),
+            {'name': 'dimension', 'type': Iterable,
+             'doc': ("Number of pixels on x, y, (and z) axes. Calculated automatically when ROI is input using "
+                     "'image_mask_roi.' Required when using 'pixel_roi.'"),
+             'default': None, 'shape': ((2,), (3,))}
+    )
+    def __init__(self, **kwargs):
+        keys_to_set = ("dimension",)
+        args_to_set = popargs_to_dict(keys_to_set, kwargs)
+        super().__init__(**kwargs)
+
+        for key, val in args_to_set.items():
+            setattr(self, key, val)
+
+        if self.dimension is not None and isinstance(self.dimension, list):
+            self.dimension = tuple(self.dimension)
+
+
+
+    @docval(
+            {'name': 'image_mask', 'type': 'array_data',
+             'doc': ("ROIs designated using a mask of size [width, height] (2D stimulation) or [width, height, "
+                     "depth] (3D stimulation), where for a given pixel a value of 1 indicates stimulation, "
+                     "and a value of 0 indicates no stimulation."),
+             'default': None, 'shape': ([None] * 2, [None] * 3)},
+            {'name': 'pixel_mask', 'type': 'array_data',
+             'doc': ("ROIs designated as a list specifying the pixel ([x1, y1], [x2, y2], …) of each ROI, where the "
+                     "items in the list are the coordinates of the center of the ROI. The size of each ROI is specified "
+                     "via the required 'roi_size' parameter."),
+             'default': None, 'shape': (None, 2)},
+            {'name': 'voxel_mask', 'type': 'array_data',
+             'doc': ("ROIs designated as a list specifying the voxel ([x1, y1, z1], "
+                 "[x2, y2, z2], …) of each ROI, where the items in the list are the coordinates of the center of "
+                 "the ROI. The size of each ROI is specified via the required 'roi_size' parameter."),
+             'default': None, 'shape': (None, 3)},
+            {'name': 'roi_size', 'type': (int, float, Iterable),
+             'doc': ("Size of a single stimulation ROI in pixels. If a scalar is provided, the ROI is assumed to be a "
+                     "circle (for 2D patterns) or cylinder (for 3D patterns) centered at the corresponding "
+                     "coordinates, with diameter 'roi_size'. If 'roi_size' is a two or three dimensional array, "
+                     "the ROI is assumed to be a rectangle or cuboid, with dimensions [width, height] or [width, "
+                     "height, depth]. This parameter is required when using 'pixel_roi'."),
+             'default': None}
+    )
+    def add_roi(self, **kwargs):
+        keys_to_set = ("roi_size",)
+        args_to_set = popargs_to_dict(keys_to_set, kwargs)
+
+        roi_size = args_to_set['roi_size']
+        if isinstance(roi_size, Iterable):
+            if len(roi_size) != 2 and len(roi_size) != 3:
+                raise ValueError("roi_size must be a scalar, a 2D iterable, or a 3D iterable")
+        #
+        # if args_to_set['image_mask'] is None and args_to_set['pixel_mask'] is None:
+        #     raise TypeError("Must provide 'pixel_roi' or 'image_mask_roi' when constructing HolographicPattern")
+
+
+        if kwargs['pixel_mask'] is not None or kwargs['voxel_mask'] is not None:
+            if args_to_set['roi_size'] is None:
+                raise TypeError("'roi_size' must be specified when using a pixel or voxel mask")
+
+            if self.dimension is None:
+                raise TypeError("'dimension' must be specified in 'create_holographic_segmentation' when using a pixel or voxel mask")
+
+        if kwargs['image_mask'] is not None:
+            mask_dim = kwargs['image_mask'].shape
+
+            if self.dimension is None:
+                self.dimension = mask_dim
+
+            if len(np.setdiff1d(np.unique(kwargs['image_mask']), np.array([0, 1]))) > 0:
+                if len(np.setdiff1d(np.unique(kwargs['image_mask']), np.array([0., 1.]))) > 0:
+                    raise ValueError("'image_mask' data must be either 0 (off) or 1 (on)")
+
+        if kwargs['pixel_mask'] is not None:
+            kwargs['pixel_mask'] = [[el[0], el[1], 1] for el in kwargs['pixel_mask']]
+
+        if kwargs['voxel_mask'] is not None:
+            kwargs['voxel_mask'] = [[el[0], el[1], el[2], 1] for el in kwargs['voxel_mask']]
+
+        super().add_roi(**kwargs)
+
+        for key, val in args_to_set.items():
+            setattr(self, key, val)
+
+    def show_mask(self):
+        '''
+        Display a plot with a 2D mask of the holographic pattern (white regions denote ROIs, black regions the background).
+        '''
+
+        if self.voxel_mask is not None:
+            raise ValueError("Cannot display 3D masks")
+
+        if self.pixel_mask is not None:
+            center_points = [[roi[0], roi[1]] for roi in self.pixel_mask]
+            center_points = np.array(center_points)
+            image_mask_roi = self.pixel_to_image_mask_roi()
+            plt.imshow(image_mask_roi, 'gray', interpolation='none')
+            plt.scatter(center_points[:, 0], center_points[:, 1], color='red', s=3)
+
+        if self.image_mask is not None:
+            plt.imshow(np.sum(self.image_mask, axis=0), 'gray', interpolation='none')
+
+        plt.axis('off')
+        plt.show()
+
+
+    @staticmethod
+    def _create_circular_mask(dimensions, center, diameter):
+        '''
+
+        '''
+        Y, X = np.ogrid[:dimensions[1], :dimensions[0]]
+        dist_from_center = np.sqrt((X - center[0]) ** 2 + (Y - center[1]) ** 2)
+
+        mask = dist_from_center <= diameter / 2
+        return mask
+
+    @staticmethod
+    def _create_rectangular_mask(dimensions, center, roi_size, img_depth=None):
+        '''
+
+        '''
+
+        if img_depth is None:
+            Y, X = np.ogrid[:dimensions[1], :dimensions[0]]
+            X_dist_from_center = (X - center[0])
+            Y_dist_from_center = (Y - center[1])
+            mask = (np.abs(X_dist_from_center) <= roi_size[0] / 2) & (np.abs(Y_dist_from_center) <= roi_size[1] / 2)
+        return mask
+
+    def pixel_to_image_mask_roi(self):
+        '''
+        Convert a pixel_roi to an image_mask_roi. Returns a 2D array containing the mask, where ROIs are encoded with a value of 1.
+        '''
+        if len(self.dimension) == 3:
+            raise ValueError("Cannot convert 3D pixel_roi to image_mask_roi")
+
+        mask = np.zeros(shape=self.dimension)
+        for roi in self.pixel_mask:
+
+            if not isinstance(self.roi_size, Iterable):
+                tmp_mask = self._create_circular_mask(self.dimension, roi, self.roi_size)
+            else:
+                tmp_mask = self._create_rectangular_mask(self.dimension, roi, self.roi_size)
+            mask[tmp_mask] = 1
+
+        return mask
+
+
+@register_class('HolographicSegmentation', namespace)
+class HolographicSegmentation(MultiContainerInterface):
+    """
+    Stores pixels in an image that represent different regions of interest (ROIs) or masks. All
+    segmentation for a given imaging plane is stored together, with storage for multiple imaging
+    planes (masks) supported. Each ROI is stored in its own subgroup, with the ROI group
+    containing both a 2D mask and a list of pixels that make up this mask. Segments can also be
+    used for masking neuropil. If segmentation is allowed to change with time, a new imaging plane
+    (or module) is required and ROI names should remain consistent between them.
+    """
+    __clsconf__ = {
+        'attr': 'holographic_segmentations',
+        'type': HolographicPattern2,
+        'add': 'add_holographic_segmentation',
+        'get': 'get_holographic_segmentation',
+        'create': 'create_holographic_segmentation'
+    }
+
+    @docval({'name': 'imaging_plane', 'type': ImagingPlane, 'doc': 'the ImagingPlane this ROI applies to'},
+            {'name': 'description', 'type': str,
+             'doc': 'Description of image plane, recording wavelength, depth, etc.', 'default': None},
+            {'name': 'name', 'type': str, 'doc': 'name of PlaneSegmentation.', 'default': None})
+    def add_segmentation(self, **kwargs):
+        kwargs.setdefault('description', kwargs['imaging_plane'].description)
+        return self.create_holographic_segmentation(**kwargs)
+
+
 
 
 @register_class('PhotostimulationSeries', namespace)

@@ -4,10 +4,15 @@ import numpy as np
 from dateutil.tz import tzlocal
 from pynwb import NWBFile, NWBHDF5IO
 from pynwb.testing import TestCase
+from pynwb.ophys import TwoPhotonSeries, OpticalChannel, ImageSegmentation
+import matplotlib.pyplot as plt
+
+import os
+os.system('python file_defined_namespace.py')
 
 # from ndx_photostim import SpatialLightModulator, PhotostimulationDevice, HolographicPattern, PhotostimulationSeries, PhotostimulationTable
-from file_classes import SpatialLightModulator, PhotostimulationDevice, HolographicPattern, PhotostimulationSeries, \
-    PhotostimulationTable
+from file_classes import SpatialLightModulator, PhotostimulationDevice, HolographicPattern, HolographicPattern2, PhotostimulationSeries, \
+    PhotostimulationTable, HolographicSegmentation
 
 def get_SLM():
     '''Return SpatialLightModulator container.'''
@@ -130,6 +135,96 @@ class TestHolographicPattern(TestCase):
         y = np.random.randint(0, 3)
         image_mask_roi[x:x + 5, y:y + 5] = 1
         return image_mask_roi
+
+
+class TestHolographicPattern2(TestCase):
+    def test_init(self):
+        nwbfile = NWBFile(
+            'my first synthetic recording',
+            'EXAMPLE_ID',
+            datetime.now(tzlocal())
+        )
+        device = nwbfile.create_device(
+            name="Microscope",
+            description="My two-photon microscope",
+            manufacturer="The best microscope manufacturer"
+        )
+
+        optical_channel = OpticalChannel(
+            name="OpticalChannel",
+            description="an optical channel",
+            emission_lambda=500.
+        )
+
+        imaging_plane = nwbfile.create_imaging_plane(
+            name="ImagingPlane",
+            optical_channel=optical_channel,
+            imaging_rate=30.,
+            description="a very interesting part of the brain",
+            device=device,
+            excitation_lambda=600.,
+            indicator="GFP",
+            location="V1",
+            grid_spacing=[.01, .01],
+            grid_spacing_unit="meters",
+            origin_coords=[1., 2., 3.],
+            origin_coords_unit="meters"
+        )
+
+        img_seg = HolographicSegmentation()
+
+        ps = img_seg.create_holographic_segmentation(
+            name='HolographicSegmentation',
+            description='output from segmenting my favorite imaging plane',
+            imaging_plane=imaging_plane,
+        )
+
+        ophys_module = nwbfile.create_processing_module(
+            name='ophys',
+            description='optical physiology processed data'
+        )
+
+        ophys_module.add(img_seg)
+
+        for _ in range(30):
+            image_mask = np.zeros((100, 100))
+
+            # randomly generate example image masks
+            x = np.random.randint(0, 95)
+            y = np.random.randint(0, 95)
+            image_mask[x:x + 5, y:y + 5] = 1
+
+            # add image mask to plane segmentation
+            ps.add_roi(image_mask=image_mask, roi_size=10)
+
+        ps.show_mask()
+
+        print(ps.to_dataframe())
+
+        ps2 = img_seg.create_holographic_segmentation(
+            name='PlaneSegmentation2',
+            description='output from segmenting my favorite imaging plane',
+            imaging_plane=imaging_plane,
+            dimension=[100, 100]
+        )
+
+        for _ in range(30):
+            # randomly generate example starting points for region
+            x = np.random.randint(0, 95)
+            y = np.random.randint(0, 95)
+
+            # define an example 4 x 3 region of pixels of weight '1'
+            pixel_mask = []
+            for ix in range(x, x + 4):
+                for iy in range(y, y + 3):
+                    pixel_mask.append((ix, iy))
+
+            # add pixel mask to plane segmentation
+            ps2.add_roi(pixel_mask=pixel_mask, roi_size=3)
+
+        ps2.show_mask()
+        print('')
+
 
 class TestPhotostimulationSeries(TestCase):
     def test_init(self):
