@@ -109,15 +109,16 @@ hp = NWBGroupSpec(neurodata_type_def='HolographicPattern',
 
 hp2 = NWBGroupSpec(neurodata_type_def='HolographicPattern2',
                   neurodata_type_inc='PlaneSegmentation',
-                  name='pattern',
+                  # name='pattern',
                   doc=("Container to store the pattern used in a photostimulation experiment. "))
 
 hs = NWBGroupSpec(neurodata_type_def='HolographicSegmentation',
                   neurodata_type_inc='NWBDataInterface',
                   name='holographic_segmentation',
-                  groups=[NWBGroupSpec(doc=("Results from image segmentation of a specific imaging plane."),
-                                       neurodata_type_inc='HolographicPattern2', quantity='+')
-                          ],
+                  groups=[hp2],
+                  #[NWBGroupSpec(doc=("Results from image segmentation of a specific imaging plane."),
+                   #                    neurodata_type_inc='HolographicPattern2', quantity='+')
+                    #      ],
                 attributes=[dimension],
                   doc=("Container to store the pattern used in a photostimulation experiment. "))
 
@@ -150,7 +151,12 @@ attribs = [NWBAttributeSpec(name='format',
            NWBAttributeSpec(name='stimulus_duration',
                             doc=("Duration (in sec) the stimulus is presented following onset."),
                             dtype='numeric',
-                            required=False)]
+                            required=False),
+           NWBAttributeSpec(name='epoch_length',
+                           doc=("Length of each epoch (in seconds)."),
+                           dtype='numeric',
+                           required=False)
+           ]
 
 ps = NWBGroupSpec(neurodata_type_def='PhotostimulationSeries',
                   neurodata_type_inc='TimeSeries',

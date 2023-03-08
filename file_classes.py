@@ -242,6 +242,8 @@ class HolographicPattern2(PlaneSegmentation):
     Container to store the pattern used in a photostimulation experiment.
     '''
 
+    __nwbfields__ = ('roi_size', 'dimension')
+
     @docval(*get_docval(PlaneSegmentation.__init__),
             {'name': 'dimension', 'type': Iterable,
              'doc': ("Number of pixels on x, y, (and z) axes. Calculated automatically when ROI is input using "
@@ -428,6 +430,7 @@ class PhotostimulationSeries(TimeSeries):
 
     __nwbfields__ = ({'name': 'pattern', 'child': True}, 'format', 'stimulus_duration',
                      "stimulus_method", "sweep_pattern", "time_per_sweep", "num_sweeps",
+                     "epoch_length",
                      {'name': 'unit', 'settable': False})
 
     @docval(*get_docval(TimeSeries.__init__, 'name'),
@@ -464,6 +467,8 @@ class PhotostimulationSeries(TimeSeries):
              'doc': ("Time to conduct a sweep (in milliseconds)."), 'default': None},
             {'name': 'num_sweeps', 'type': (int, float),
              'doc': ("Repetition of a sweep pattern for a single stimulation instance. "), 'default': None},
+            {'name': 'epoch_length', 'type': (int, float),
+             'doc': ("Length of each epoch (in seconds)."), 'default': None},
             {'name': 'unit', 'type': str, 'doc': ("Timestamps unit (default: seconds)."), 'default': 'seconds'},
             *get_docval(TimeSeries.__init__, 'resolution', 'conversion', 'starting_time',
                         'comments', 'description', 'control', 'control_description', 'offset')
@@ -533,7 +538,7 @@ class PhotostimulationSeries(TimeSeries):
                         raise ValueError("'series' data must be either 0 or 1")
 
         keys_to_set = ('pattern', 'format', 'stimulus_duration',
-                       'stimulus_method', 'sweep_pattern', 'time_per_sweep', 'num_sweeps')
+                       'stimulus_method', 'sweep_pattern', 'time_per_sweep', 'num_sweeps', 'epoch_length')
         args_to_set = popargs_to_dict(keys_to_set, kwargs)
 
         data, timestamps = popargs('data', 'timestamps', kwargs)

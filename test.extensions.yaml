@@ -137,7 +137,6 @@ groups:
       required: false
 - neurodata_type_def: HolographicPattern2
   neurodata_type_inc: PlaneSegmentation
-  name: pattern
   doc: 'Container to store the pattern used in a photostimulation experiment. '
 - neurodata_type_def: HolographicSegmentation
   neurodata_type_inc: NWBDataInterface
@@ -159,9 +158,9 @@ groups:
       is input using 'image_mask_roi.' Required when using 'pixel_roi.'
     required: false
   groups:
-  - neurodata_type_inc: HolographicPattern2
-    doc: Results from image segmentation of a specific imaging plane.
-    quantity: +
+  - neurodata_type_def: HolographicPattern2
+    neurodata_type_inc: PlaneSegmentation
+    doc: 'Container to store the pattern used in a photostimulation experiment. '
 - neurodata_type_def: PhotostimulationSeries
   neurodata_type_inc: TimeSeries
   doc: 'TimeSeries object for photostimulus presentation. '
@@ -283,9 +282,9 @@ groups:
         is input using 'image_mask_roi.' Required when using 'pixel_roi.'
       required: false
     groups:
-    - neurodata_type_inc: HolographicPattern2
-      doc: Results from image segmentation of a specific imaging plane.
-      quantity: +
+    - neurodata_type_def: HolographicPattern2
+      neurodata_type_inc: PlaneSegmentation
+      doc: 'Container to store the pattern used in a photostimulation experiment. '
 - neurodata_type_def: PhotostimulationTable
   neurodata_type_inc: DynamicTable
   doc: "Table of to hold all of an experiment's PhotostimulationSeries objects. "

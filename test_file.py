@@ -228,7 +228,14 @@ class TestHolographicPattern2(TestCase):
         ps_series = PhotostimulationSeries(name="photosim series", format='interval', pattern=ps2, data=[1, -1, 1, -1],
                                timestamps=[0.5, 1, 2, 4], stimulus_method="stim_method", sweep_pattern="...",
                                time_per_sweep=10, num_sweeps=20)
+        nwbfile.add_stimulus(ps_series)
 
+        with NWBHDF5IO("photostimulation_tutorial.nwb", "w") as io:
+            io.write(nwbfile)
+
+        with NWBHDF5IO("basics_tutorial.nwb", "r", load_namespaces=True) as io:
+            read_nwbfile = io.read()
+            print(read_nwbfile)
         print('')
 
 
