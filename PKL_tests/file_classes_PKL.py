@@ -8,9 +8,10 @@ from pynwb.base import TimeSeries
 from pynwb.core import DynamicTable
 from pynwb.device import Device
 from pynwb.file import NWBContainer
+import os
 
 ns_path = "test.namespace.yaml"
-load_namespaces(ns_path)
+load_namespaces("/Users/harriscaw/PycharmProjects/nwb-photostim/PKL_tests/test.namespace.yaml")
 
 namespace = 'test'
 

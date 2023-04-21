@@ -155,6 +155,15 @@ groups:
     dtype: numeric
     doc: Duration (in sec) the stimulus is presented following onset.
     required: false
+  - name: roi_size
+    dtype: numeric
+    doc: Size of a single stimulation ROI in pixels. If a scalar is provided, the
+      ROI is assumed to be a circle (for 2D patterns) or cylinder (for 3D patterns)
+      centered at the corresponding coordinates, with diameter 'roi_size'. If 'roi_size'
+      is a two or three dimensional array, the ROI is assumed to be a rectangle or
+      cuboid, with dimensions [width, height] or [width, height, depth]. This parameter
+      is required when using 'pixel_roi'.
+    required: false
   datasets:
   - name: image_mask_roi
     dims:
@@ -185,16 +194,6 @@ groups:
       are the coordinates of the center of the ROI. The size of each ROI is specified
       via the required 'roi_size' parameter.
     quantity: '?'
-    attributes:
-    - name: roi_size
-      dtype: numeric
-      doc: Size of a single stimulation ROI in pixels. If a scalar is provided, the
-        ROI is assumed to be a circle (for 2D patterns) or cylinder (for 3D patterns)
-        centered at the corresponding coordinates, with diameter 'roi_size'. If 'roi_size'
-        is a two or three dimensional array, the ROI is assumed to be a rectangle
-        or cuboid, with dimensions [width, height] or [width, height, depth]. This
-        parameter is required when using 'pixel_roi'.
-      required: false
 - neurodata_type_def: PhotostimulationSeries
   neurodata_type_inc: TimeSeries
   doc: 'TimeSeries object for photostimulus presentation. '
@@ -240,6 +239,15 @@ groups:
       dtype: numeric
       doc: Duration (in sec) the stimulus is presented following onset.
       required: false
+    - name: roi_size
+      dtype: numeric
+      doc: Size of a single stimulation ROI in pixels. If a scalar is provided, the
+        ROI is assumed to be a circle (for 2D patterns) or cylinder (for 3D patterns)
+        centered at the corresponding coordinates, with diameter 'roi_size'. If 'roi_size'
+        is a two or three dimensional array, the ROI is assumed to be a rectangle
+        or cuboid, with dimensions [width, height] or [width, height, depth]. This
+        parameter is required when using 'pixel_roi'.
+      required: false
     datasets:
     - name: image_mask_roi
       dims:
@@ -270,16 +278,6 @@ groups:
         list are the coordinates of the center of the ROI. The size of each ROI is
         specified via the required 'roi_size' parameter.
       quantity: '?'
-      attributes:
-      - name: roi_size
-        dtype: numeric
-        doc: Size of a single stimulation ROI in pixels. If a scalar is provided,
-          the ROI is assumed to be a circle (for 2D patterns) or cylinder (for 3D
-          patterns) centered at the corresponding coordinates, with diameter 'roi_size'.
-          If 'roi_size' is a two or three dimensional array, the ROI is assumed to
-          be a rectangle or cuboid, with dimensions [width, height] or [width, height,
-          depth]. This parameter is required when using 'pixel_roi'.
-        required: false
   - neurodata_type_def: PhotostimulationMethod
     neurodata_type_inc: NWBContainer
     name: method

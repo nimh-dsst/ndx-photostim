@@ -175,7 +175,8 @@ hp = NWBGroupSpec(
             dtype='numeric',
             required=False
         ),
-        stim_duration
+        stim_duration,
+        roi_size
     ],
     datasets=[
         NWBDatasetSpec(
@@ -195,9 +196,9 @@ hp = NWBGroupSpec(
                  "required 'roi_size' parameter."),
             shape=([None] * 2, [None] * 3),
             quantity='?',
-            attributes=[
-                roi_size
-            ]
+            # attributes=[
+            #     roi_size
+            # ]
         )
     ]
 )
