@@ -1,15 +1,19 @@
 import os
+from datetime import datetime
+
+import numpy as np
+from dateutil.tz import tzlocal
+from ndx_photostim import SpatialLightModulator, Laser, PhotostimulationMethod, HolographicPattern, \
+                             PhotostimulationSeries, PhotostimulationTable
+from pynwb import NWBFile, NWBHDF5IO
+from pynwb.testing import TestCase
 
 
-def test_example_usage():
-    '''Test example use script from README.'''
-
+class TestExampleUse(TestCase):
     import numpy as np
     from dateutil.tz import tzlocal
     from datetime import datetime
     from pynwb import NWBFile, NWBHDF5IO
-    from ndx_photostim import SpatialLightModulator, Laser, PhotostimulationMethod, HolographicPattern, \
-        PhotostimulationSeries, PhotostimulationTable
 
     # create an example NWB file
     nwbfile = NWBFile('nwb-photostim_example', 'EXAMPLE_ID', datetime.now(tzlocal()))
@@ -41,7 +45,7 @@ def test_example_usage():
     hp = HolographicPattern(name='pattern1',
                             image_mask_roi=np.round(np.random.rand(5, 5)),
                             stim_duration=0.300,
-                            power_per_target=8)
+                            method=ps_method)
 
     # show the mask
     hp.show_mask()
@@ -51,8 +55,7 @@ def test_example_usage():
                                 format='interval',
                                 data=[1, -1, 1, -1],
                                 timestamps=[0.5, 1, 2, 4],
-                                pattern=hp,
-                                method=ps_method)
+                                pattern=hp)
 
     # add the stimulus to the NWB file
     nwbfile.add_stimulus(ps_series)

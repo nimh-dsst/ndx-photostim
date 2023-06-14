@@ -140,7 +140,19 @@ def main():
                      "if spatially modulated during stimulation."),
                 dtype='numeric',
                 required=False
-            )
+            ),
+            NWBAttributeSpec(
+                name='power_per_target',
+                doc=("Power (in milliwatts) applied to each target during patterned photostimulation."),
+                dtype='numeric',
+                required=False
+            ),
+            NWBAttributeSpec(
+                name='opsin',
+                doc=("Opsin used in photostimulation."),
+                dtype='text',
+                required=False
+            ),
         ],
         groups=[
             slm,
@@ -185,12 +197,7 @@ def main():
                 dims=(('width', 'height'), ('width', 'height', 'depth')),
                 required=False
             ),
-            NWBAttributeSpec(
-                name='power_per_target',
-                doc=("Power (in milliwatts) applied to each target during patterned photostimulation."),
-                dtype='numeric',
-                required=False
-            ),
+
             stim_duration,
             roi_size
         ],
@@ -216,6 +223,9 @@ def main():
                 #     roi_size
                 # ]
             )
+        ],
+        groups=[
+            psm
         ]
     )
 
@@ -241,8 +251,7 @@ def main():
             )
         ],
         groups=[
-            hp,
-            psm
+            hp
         ]
     )
 

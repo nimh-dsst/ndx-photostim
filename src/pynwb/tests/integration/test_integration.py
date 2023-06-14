@@ -10,10 +10,13 @@ from pynwb.testing import TestCase
 
 
 class TestIO(TestCase):
-    '''Integration tests to ensure read/write compatability.'''
-
+    """
+    Integration tests to ensure read/write compatability.
+    """
     def setUp(self):
-        '''Create a blank NWBFile.'''
+        """
+        Create a blank NWBFile.
+        """
         self.nwbfile = NWBFile(
             session_description='session_description',
             identifier='identifier',
@@ -55,28 +58,25 @@ class TestIO(TestCase):
         hp = HolographicPattern(name='pattern1',
                                 image_mask_roi=np.round(np.random.rand(5, 5)),
                                 stim_duration=0.300,
-                                power_per_target=8)
+                                method=ps_method)
 
         # define stimulation time series using holographic pattern
         s1 = PhotostimulationSeries(name="series_1",
                                     format='interval',
                                     data=[1, -1, 1, -1],
                                     timestamps=[0.5, 1, 2, 4],
-                                    pattern=hp,
-                                    method=ps_method)
+                                    pattern=hp)
         s2 = PhotostimulationSeries(name="series_2",
                                     format='interval',
                                     data=[-1, 1, -1, 1],
                                     timestamps=[0.4, 0.9, 1.9, 3.9],
-                                    pattern=hp,
-                                    method=ps_method)
+                                    pattern=hp)
         s3 = PhotostimulationSeries(name="series_3",
                                     format='series',
                                     stim_duration=0.05,
                                     data=[0, 0, 0, 1, 1, 0],
                                     timestamps=[0, 0.5, 1, 1.5, 3, 6],
-                                    pattern = hp,
-                                    method=ps_method)
+                                    pattern = hp)
         # add photostim series data to nwb file
         [self.nwbfile.add_stimulus(s) for s in [s1, s2, s3]]
 
