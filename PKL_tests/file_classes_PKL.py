@@ -100,6 +100,9 @@ class PhotostimulationMethod(NWBContainer):
             {'name': 'power_per_target', 'type': (int, float),
              'doc': ("Power (in milliWatts) applied to each target during patterned photostimulation."),
              'default': None},
+            {'name': 'opsin', 'type': str,
+             'doc': ("Opsin used in photostimulation."),
+             'default': None},
             {'name': 'slm', 'type': SpatialLightModulator,
              'doc': ("SpatialLightModulator used to generate holographic pattern."),
              'default': None},
@@ -109,7 +112,7 @@ class PhotostimulationMethod(NWBContainer):
             )
     def __init__(self, **kwargs):
         keys_to_set = ('stimulus_method', 'sweep_pattern', 'sweep_size', 'time_per_sweep',
-                       'num_sweeps','power_per_target', 'slm', 'laser')
+                       'num_sweeps','power_per_target', 'opsin', 'slm', 'laser')
         args_to_set = popargs_to_dict(keys_to_set, kwargs)
         super().__init__(**kwargs)
         for key, val in args_to_set.items():

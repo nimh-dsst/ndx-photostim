@@ -35,7 +35,8 @@ def get_photostim_method():
                                        sweep_size=0,
                                        time_per_sweep=0,
                                        num_sweeps=0,
-                                       power_per_target=8.)
+                                       power_per_target=8.,
+                                       opsin="testOpsin")
     slm = get_SLM()
     laser = get_laser()
     ps_method.add_slm(slm)

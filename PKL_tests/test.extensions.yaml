@@ -81,6 +81,10 @@ groups:
     dtype: numeric
     doc: Power (in milliwatts) applied to each target during patterned photostimulation.
     required: false
+  - name: opsin
+    dtype: text
+    doc: Opsin used in photostimulation.
+    required: false
   groups:
   - neurodata_type_def: SpatialLightModulator
     neurodata_type_inc: Device
@@ -227,6 +231,10 @@ groups:
     - name: power_per_target
       dtype: numeric
       doc: Power (in milliwatts) applied to each target during patterned photostimulation.
+      required: false
+    - name: opsin
+      dtype: text
+      doc: Opsin used in photostimulation.
       required: false
     groups:
     - neurodata_type_def: SpatialLightModulator
@@ -393,6 +401,10 @@ groups:
       - name: power_per_target
         dtype: numeric
         doc: Power (in milliwatts) applied to each target during patterned photostimulation.
+        required: false
+      - name: opsin
+        dtype: text
+        doc: Opsin used in photostimulation.
         required: false
       groups:
       - neurodata_type_def: SpatialLightModulator

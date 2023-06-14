@@ -130,7 +130,13 @@ psm = NWBGroupSpec(
             doc=("Power (in milliwatts) applied to each target during patterned photostimulation."),
             dtype='numeric',
             required=False
-        )
+        ),
+        NWBAttributeSpec(
+            name='opsin',
+            doc=("Opsin used in photostimulation."),
+            dtype='text',
+            required=False
+        ),
     ],
     groups=[
         slm,
