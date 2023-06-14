@@ -200,6 +200,9 @@ hp = NWBGroupSpec(
             #     roi_size
             # ]
         )
+    ],
+    groups=[
+        psm
     ]
 )
 
@@ -225,8 +228,7 @@ ps = NWBGroupSpec(
         )
     ],
     groups=[
-        hp,
-        psm
+        hp
     ]
 )
 

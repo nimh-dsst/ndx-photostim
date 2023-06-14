@@ -37,32 +37,30 @@ def get_photostim_method():
 def get_holographic_pattern():
     '''Return example HolographicPattern with image_mask_roi'''
     image_mask_roi = TestHolographicPattern._create_image_mask_roi()
-    hp = HolographicPattern(name='pattern', image_mask_roi=image_mask_roi, roi_size=5)
+    ps_method = get_photostim_method()
+    hp = HolographicPattern(name='pattern', image_mask_roi=image_mask_roi, roi_size=5, method=ps_method)
     return hp
 
 def get_photostim_series():
     '''Return example PhotostimulationSeries container.'''
     hp = get_holographic_pattern()
-    ps_method = get_photostim_method()
+
 
     photostim_series = PhotostimulationSeries(name="series_1",
                                     format='interval',
                                     data=[1, -1, 1, -1],
                                     timestamps=[0.5, 1, 2, 4],
-                                    pattern=hp,
-                                    method=ps_method)
+                                    pattern=hp)
     return photostim_series
 
 def get_series():
     '''Return example PhotostimulationSeries.'''
     hp = get_holographic_pattern()
-    ps_method = get_photostim_method()
     series = PhotostimulationSeries(name="series_1",
                                     format='interval',
                                     data=[1, -1, 1, -1],
                                     timestamps=[0.5, 1, 2, 4],
-                                    pattern=hp,
-                                    method=ps_method)
+                                    pattern=hp)
     return series
 
 

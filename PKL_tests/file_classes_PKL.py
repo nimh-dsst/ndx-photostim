@@ -141,7 +141,8 @@ class HolographicPattern(NWBContainer):
     Container to store the pattern used in a photostimulation experiment.
     """
 
-    __nwbfields__ = ('image_mask_roi', 'pixel_roi', 'stim_duration', 'power_per_target', 'roi_size', 'dimension')
+    __nwbfields__ = ('image_mask_roi', 'pixel_roi', 'stim_duration', 'power_per_target', 'roi_size', 'dimension',
+                     {'name': 'method', 'child': True})
 
     @docval(*get_docval(NWBContainer.__init__) + (
             {'name': 'image_mask_roi', 'type': 'array_data',
@@ -169,11 +170,13 @@ class HolographicPattern(NWBContainer):
             {'name': 'dimension', 'type': Iterable,
              'doc': ("Number of pixels on x, y, (and z) axes. Calculated automatically when ROI is input using "
                      "'image_mask_roi.' Required when using 'pixel_roi.'"),
-             'default': None, 'shape': ((2,), (3,))}
+             'default': None, 'shape': ((2,), (3,))},
+            {'name': 'method', 'type': (PhotostimulationMethod),
+             'doc': ("PhotostimulationMethod associated with current photostim series.")}
             )
             )
     def __init__(self, **kwargs):
-        keys_to_set = ('image_mask_roi', 'pixel_roi', 'stim_duration', 'power_per_target', 'roi_size', 'dimension')
+        keys_to_set = ('image_mask_roi', 'pixel_roi', 'stim_duration', 'power_per_target', 'roi_size', 'dimension', 'method')
         args_to_set = popargs_to_dict(keys_to_set, kwargs)
 
         roi_size = args_to_set['roi_size']
@@ -298,7 +301,6 @@ class PhotostimulationSeries(TimeSeries):
 
     __nwbfields__ = ('format', 'stim_duration', 'epoch_length',
                      {'name': 'pattern', 'child': True},
-                     {'name': 'method', 'child': True},
                      {'name': 'unit', 'settable': False})
 
     @docval(*get_docval(TimeSeries.__init__, 'name'),
@@ -329,8 +331,6 @@ class PhotostimulationSeries(TimeSeries):
              'doc': ("Length of each epoch (in sec)."), 'default': None},
             {'name': 'pattern', 'type': (HolographicPattern),
              'doc': ("HolographicPattern associated with current photostim series.")},
-            {'name': 'method', 'type': (PhotostimulationMethod),
-             'doc': ("PhotostimulationMethod associated with current photostim series.")},
             {'name': 'unit', 'type': str,
              'doc': ("Timestamps unit (default: seconds)."), 'default': 'seconds'},
             *get_docval(TimeSeries.__init__, 'resolution', 'conversion', 'starting_time',
@@ -394,7 +394,7 @@ class PhotostimulationSeries(TimeSeries):
                     if len(np.setdiff1d(np.unique(kwargs['data']), np.array([0., 1.]))) > 0:
                         raise ValueError("'series' data must be either 0 or 1.")
 
-        keys_to_set = ('format', 'stim_duration', 'epoch_length', 'pattern', 'method')
+        keys_to_set = ('format', 'stim_duration', 'epoch_length', 'pattern')
         args_to_set = popargs_to_dict(keys_to_set, kwargs)
 
         data, timestamps = popargs('data', 'timestamps', kwargs)
@@ -548,8 +548,8 @@ class PhotostimulationTable(DynamicTable):
         {'name': 'stop_time', 'description': ("Stop time of the series."), 'required': True},
         {'name': 'pattern_name', 'description': ("Name of the HolographicPattern associated with the series."),
          'required': True},
-        {'name': 'method_name', 'description': ("Name of the PhotostimulationMethod associated with the series."),
-         'required': True},
+         {'name': 'method_name', 'description': ("Name of the PhotostimulationMethod associated with the series."),
+          'required': True},
     )
 
     @docval(*get_docval(DynamicTable.__init__, 'name', 'description'),
@@ -604,7 +604,7 @@ class PhotostimulationTable(DynamicTable):
                         'start_time': float(series._get_start_time()),
                         'stop_time': float(series._get_end_time()),
                         'pattern_name': series.pattern.name,
-                        'method_name': series.method.name
+                        'method_name': series.pattern.method.name
                         }
 
             super().add_row(**new_args)
