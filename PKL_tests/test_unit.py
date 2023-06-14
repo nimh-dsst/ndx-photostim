@@ -34,7 +34,8 @@ def get_photostim_method():
                                        sweep_pattern="none",
                                        sweep_size=0,
                                        time_per_sweep=0,
-                                       num_sweeps=0)
+                                       num_sweeps=0,
+                                       power_per_target=8.)
     slm = get_SLM()
     laser = get_laser()
     ps_method.add_slm(slm)
@@ -393,7 +394,6 @@ class TestIO(TestCase):
         hp = HolographicPattern(name='pattern1',
                                 image_mask_roi=np.round(np.random.rand(5, 5)),
                                 stim_duration=0.300,
-                                power_per_target=8.,
                                 method=ps_method)
 
         # define stimulation time series using holographic pattern
@@ -478,7 +478,6 @@ class TestExampleUse(TestCase):
     hp = HolographicPattern(name='pattern1',
                             image_mask_roi=np.round(np.random.rand(5, 5)),
                             stim_duration=0.300,
-                            power_per_target=8,
                             method=ps_method)
 
     # show the mask

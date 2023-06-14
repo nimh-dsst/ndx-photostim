@@ -77,6 +77,10 @@ groups:
     doc: Repetition of a sweep pattern for a single stimulation instanceif spatially
       modulated during stimulation.
     required: false
+  - name: power_per_target
+    dtype: numeric
+    doc: Power (in milliwatts) applied to each target during patterned photostimulation.
+    required: false
   groups:
   - neurodata_type_def: SpatialLightModulator
     neurodata_type_inc: Device
@@ -146,10 +150,6 @@ groups:
     - - 3
     doc: Number of pixels on x, y, (and z) axes. Calculated automatically when ROI
       is input using 'image_mask_roi.' Required when using 'pixel_roi.'
-    required: false
-  - name: power_per_target
-    dtype: numeric
-    doc: Power (in milliwatts) applied to each target during patterned photostimulation.
     required: false
   - name: stim_duration
     dtype: numeric
@@ -223,6 +223,10 @@ groups:
       dtype: numeric
       doc: Repetition of a sweep pattern for a single stimulation instanceif spatially
         modulated during stimulation.
+      required: false
+    - name: power_per_target
+      dtype: numeric
+      doc: Power (in milliwatts) applied to each target during patterned photostimulation.
       required: false
     groups:
     - neurodata_type_def: SpatialLightModulator
@@ -312,10 +316,6 @@ groups:
       doc: Number of pixels on x, y, (and z) axes. Calculated automatically when ROI
         is input using 'image_mask_roi.' Required when using 'pixel_roi.'
       required: false
-    - name: power_per_target
-      dtype: numeric
-      doc: Power (in milliwatts) applied to each target during patterned photostimulation.
-      required: false
     - name: stim_duration
       dtype: numeric
       doc: Duration (in sec) the stimulus is presented following onset.
@@ -389,6 +389,10 @@ groups:
         dtype: numeric
         doc: Repetition of a sweep pattern for a single stimulation instanceif spatially
           modulated during stimulation.
+        required: false
+      - name: power_per_target
+        dtype: numeric
+        doc: Power (in milliwatts) applied to each target during patterned photostimulation.
         required: false
       groups:
       - neurodata_type_def: SpatialLightModulator

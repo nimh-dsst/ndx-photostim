@@ -77,7 +77,7 @@ class PhotostimulationMethod(NWBContainer):
 
     __nwbfields__ = (
         {'name': 'slm', 'child': True}, {'name': 'laser', 'child': True},
-        'stimulus_method', 'sweep_pattern', 'sweep_size', 'time_per_sweep', 'num_sweeps')
+        'stimulus_method', 'sweep_pattern', 'sweep_size', 'time_per_sweep', 'num_sweeps', 'power_per_target')
 
     @docval({'name': 'name', 'type': str, 'doc': ("Method used to generate photostimulation.")},
             {'name': 'stimulus_method', 'type': str,
@@ -97,16 +97,19 @@ class PhotostimulationMethod(NWBContainer):
             {'name': 'num_sweeps', 'type': (int, float),
              'doc': ("Repetition of a sweep pattern for a single stimulation instance."),
              'default': None},
+            {'name': 'power_per_target', 'type': (int, float),
+             'doc': ("Power (in milliWatts) applied to each target during patterned photostimulation."),
+             'default': None},
             {'name': 'slm', 'type': SpatialLightModulator,
              'doc': ("SpatialLightModulator used to generate holographic pattern."),
              'default': None},
             {'name': 'laser', 'type': Laser,
              'doc': ("Laser used to apply photostimulation."),
-             'default': None}
+             'default': None},
             )
     def __init__(self, **kwargs):
         keys_to_set = ('stimulus_method', 'sweep_pattern', 'sweep_size', 'time_per_sweep',
-                       'num_sweeps', 'slm', 'laser',)
+                       'num_sweeps','power_per_target', 'slm', 'laser')
         args_to_set = popargs_to_dict(keys_to_set, kwargs)
         super().__init__(**kwargs)
         for key, val in args_to_set.items():
@@ -141,7 +144,7 @@ class HolographicPattern(NWBContainer):
     Container to store the pattern used in a photostimulation experiment.
     """
 
-    __nwbfields__ = ('image_mask_roi', 'pixel_roi', 'stim_duration', 'power_per_target', 'roi_size', 'dimension',
+    __nwbfields__ = ('image_mask_roi', 'pixel_roi', 'stim_duration', 'roi_size', 'dimension',
                      {'name': 'method', 'child': True})
 
     @docval(*get_docval(NWBContainer.__init__) + (
@@ -157,9 +160,7 @@ class HolographicPattern(NWBContainer):
              'default': None, 'shape': ((None, 2), (None, 3))},
             {'name': 'stim_duration', 'type': (int, float),
              'doc': ("Duration (in sec) the stimulus is presented following onset."), 'default': None},
-            {'name': 'power_per_target', 'type': (int, float),
-             'doc': ("Power (in milliWatts) applied to each target during patterned photostimulation."),
-             'default': None},
+
             {'name': 'roi_size', 'type': (int, float, Iterable),
              'doc': ("Size of a single stimulation ROI in pixels. If a scalar is provided, the ROI is assumed to be a "
                      "circle (for 2D patterns) or cylinder (for 3D patterns) centered at the corresponding "
@@ -176,7 +177,7 @@ class HolographicPattern(NWBContainer):
             )
             )
     def __init__(self, **kwargs):
-        keys_to_set = ('image_mask_roi', 'pixel_roi', 'stim_duration', 'power_per_target', 'roi_size', 'dimension', 'method')
+        keys_to_set = ('image_mask_roi', 'pixel_roi', 'stim_duration', 'roi_size', 'dimension', 'method')
         args_to_set = popargs_to_dict(keys_to_set, kwargs)
 
         roi_size = args_to_set['roi_size']
