@@ -515,7 +515,7 @@ class PhotostimulationSeries(TimeSeries):
             return np.nan
 
         if self.timestamps is None:
-            end = self._get_start_time() + (self.stim_duration * (len(self.data) - 1) - self._get_start_time())
+            end = self._get_start_time() + self.stim_duration * (len(self.data) - 1)
             return end
 
         return self.timestamps[-1]
@@ -623,7 +623,8 @@ class PhotostimulationTable(DynamicTable):
         y_ticks = []
         for i, series in enumerate(self.series):
             start_stop_list = series._get_start_stop_list()
-            ax.broken_barh(start_stop_list, ((i + 1) * 10, 8))
+            start_span_list = [(start, stop-start) for (start,stop) in start_stop_list]
+            ax.broken_barh(start_span_list, ((i + 1) * 10, 8))
             y_ticks.append((i + 1) * 10 + 4)
 
         ax.set_yticks(y_ticks, labels=self.series_name)
