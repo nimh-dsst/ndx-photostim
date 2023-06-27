@@ -511,7 +511,7 @@ class PhotostimulationSeries(TimeSeries):
             return np.nan
 
         if self.timestamps is None:
-            end = self._get_start_time() + self.stim_duration * (len(self.data) - 1)
+            end = self._get_start_time() + (self.stim_duration * (len(self.data) - 1) - self._get_start_time())
             return end
 
         return self.timestamps[-1]
