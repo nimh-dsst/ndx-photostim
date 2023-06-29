@@ -627,13 +627,16 @@ class PhotostimulationTable(DynamicTable):
             fig, ax = plt.subplots(figsize=figsize)
 
         y_ticks = []
-        for i, series in enumerate(self.series):
+        y_labels = []
+        for i in range(len(self.series)):
+            series = self.series[i]
             start_stop_list = series._get_start_stop_list()
             start_span_list = [(start, stop-start) for (start,stop) in start_stop_list]
             ax.broken_barh(start_span_list, ((i + 1) * 10, 8))
             y_ticks.append((i + 1) * 10 + 4)
+            y_labels.append(self.series_name[i])
 
-        ax.set_yticks(y_ticks, labels=self.series_name)
+        ax.set_yticks(y_ticks, labels=y_labels)
         ax.set_xlabel('Timestamp (seconds)')
         ax.set_title(f"Presentation timestamps for PhotostimulationTable '{self.name}'")
         ax.xaxis.grid()
