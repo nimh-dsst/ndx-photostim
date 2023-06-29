@@ -6,6 +6,7 @@ import numpy as np
 from pynwb import NWBHDF5IO
 from pynwb import register_class, load_namespaces
 from pynwb import register_map
+import matplotlib.pyplot as plt
 
 from pynwb.image import GrayscaleImage
 from file_classes_PKL import SpatialLightModulator, Laser, PhotostimulationMethod, HolographicPattern, \
@@ -315,6 +316,10 @@ class TestPhotostimulationTable(TestCase):
         )
         behavior_module.add(sp)
 
+        self.path = 'test.nwb'
+        with NWBHDF5IO(self.path, "w") as io:
+            io.write(nwbfile)
+
     def test_plot_presentation_times(self):
         '''Check that PhotostimulationTable can be plotted correctly.'''
         ps_method = get_photostim_method()
@@ -339,7 +344,17 @@ class TestPhotostimulationTable(TestCase):
         [nwbfile.add_stimulus(s) for s in [s1, s2, s3]]
         sp.add_series([s1, s2, s3])  # , row_name=["row_1", "row_2", "row_3"])
 
-        sp.plot_presentation_times()
+        ax = sp.plot_presentation_times(xlim=[0, 2])
+        plt.show()
+
+    def test_read_table_plot_presentation(self):
+        self.path = 'test.nwb'
+        with NWBHDF5IO(self.path, mode='r', load_namespaces=True) as io:
+            read_nwbfile = io.read()
+
+            read_nwbfile.modules['holographic_photostim']
+            print('')
+
 
 
 

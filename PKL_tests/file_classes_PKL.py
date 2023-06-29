@@ -613,12 +613,18 @@ class PhotostimulationTable(DynamicTable):
 
             super().add_row(**new_args)
 
-    def plot_presentation_times(self):
+    @docval({'name': 'figsize', 'type': Iterable, 'doc': ("Width, height in inches (float, float)"), 'default': None},
+            {'name': 'xlim', 'type': Iterable, 'doc': ("Set x limits of plot with format [left, right]"), 'default': None})
+    def plot_presentation_times(self, figsize=None, xlim=None):
         """
         Show a plot with each photostimulation series (y-axis), and the timestamp(s) at
         which that pattern was presented (x-axis).
         """
-        fig, ax = plt.subplots()
+
+        if figsize is None:
+            fig, ax = plt.subplots()
+        else:
+            fig, ax = plt.subplots(figsize=figsize)
 
         y_ticks = []
         for i, series in enumerate(self.series):
@@ -631,4 +637,7 @@ class PhotostimulationTable(DynamicTable):
         ax.set_xlabel('Timestamp (seconds)')
         ax.set_title(f"Presentation timestamps for PhotostimulationTable '{self.name}'")
         ax.xaxis.grid()
-        plt.show()
+
+        if xlim is not None:
+            ax.set_xlim(xlim)
+        return ax
