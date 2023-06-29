@@ -5,7 +5,9 @@ from ndx_photostim import SpatialLightModulator, Laser, PhotostimulationMethod, 
 from pynwb import NWBFile
 from pynwb.testing import TestCase
 from dateutil.tz import tzlocal
+from pynwb import NWBFile, NWBHDF5IO
 import os
+import matplotlib.pyplot as plt
 
 def get_SLM():
     '''Return SpatialLightModulator container.'''
@@ -307,6 +309,10 @@ class TestPhotostimulationTable(TestCase):
         )
         behavior_module.add(sp)
 
+        self.path = 'test.nwb'
+        with NWBHDF5IO(self.path, "w") as io:
+            io.write(nwbfile)
+
     def test_plot_presentation_times(self):
         '''Check that PhotostimulationTable can be plotted correctly.'''
         ps_method = get_photostim_method()
@@ -331,5 +337,5 @@ class TestPhotostimulationTable(TestCase):
         [nwbfile.add_stimulus(s) for s in [s1, s2, s3]]
         sp.add_series([s1, s2, s3])  # , row_name=["row_1", "row_2", "row_3"])
 
-        sp.plot_presentation_times()
-
+        ax = sp.plot_presentation_times(xlim=[0, 2])
+        plt.show()

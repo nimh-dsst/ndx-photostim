@@ -3,8 +3,7 @@ from datetime import datetime
 
 import numpy as np
 from dateutil.tz import tzlocal
-from ndx_photostim import SpatialLightModulator, Laser, PhotostimulationMethod, HolographicPattern, \
-                             PhotostimulationSeries, PhotostimulationTable
+
 from pynwb import NWBFile, NWBHDF5IO
 from pynwb.testing import TestCase
 
@@ -13,7 +12,10 @@ class TestExampleUse(TestCase):
     import numpy as np
     from dateutil.tz import tzlocal
     from datetime import datetime
+    import matplotlib.pyplot as plt
     from pynwb import NWBFile, NWBHDF5IO
+    from ndx_photostim import SpatialLightModulator, Laser, PhotostimulationMethod, HolographicPattern, \
+        PhotostimulationSeries, PhotostimulationTable
 
     # create an example NWB file
     nwbfile = NWBFile('nwb-photostim_example', 'EXAMPLE_ID', datetime.now(tzlocal()))
@@ -66,7 +68,8 @@ class TestExampleUse(TestCase):
     stim_table.add_series(ps_series)
 
     # plot the timestamps when the stimulus was presented
-    stim_table.plot_presentation_times()
+    ax = stim_table.plot_presentation_times()
+    plt.show()
 
     # create a processing module and add the PresentationTable to it
     module = nwbfile.create_processing_module(name="photostimulation", description="example photostimulation table")

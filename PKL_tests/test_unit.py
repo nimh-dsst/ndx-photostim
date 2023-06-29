@@ -347,15 +347,6 @@ class TestPhotostimulationTable(TestCase):
         ax = sp.plot_presentation_times(xlim=[0, 2])
         plt.show()
 
-    def test_read_table_plot_presentation(self):
-        self.path = 'test.nwb'
-        with NWBHDF5IO(self.path, mode='r', load_namespaces=True) as io:
-            read_nwbfile = io.read()
-
-            read_nwbfile.modules['holographic_photostim']
-            print('')
-
-
 
 
 
@@ -461,6 +452,7 @@ class TestExampleUse(TestCase):
     from dateutil.tz import tzlocal
     from datetime import datetime
     from pynwb import NWBFile, NWBHDF5IO
+    import matplotlib.pyplot as plt
     from file_classes_PKL import SpatialLightModulator, Laser, PhotostimulationMethod, HolographicPattern, \
         PhotostimulationSeries, PhotostimulationTable
 
@@ -515,7 +507,8 @@ class TestExampleUse(TestCase):
     stim_table.add_series(ps_series)
 
     # plot the timestamps when the stimulus was presented
-    stim_table.plot_presentation_times()
+    ax = stim_table.plot_presentation_times()
+    plt.show()
 
     # create a processing module and add the PresentationTable to it
     module = nwbfile.create_processing_module(name="photostimulation", description="example photostimulation table")
