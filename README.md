@@ -72,7 +72,7 @@ slm = SpatialLightModulator(name='slm',
 
 # store the laser used
 laser = Laser(name='laser',
-              model='Coherent',
+              model='Coherent Monaco',
               wavelength=1030,
               power=8,
               peak_pulse_energy=20,
