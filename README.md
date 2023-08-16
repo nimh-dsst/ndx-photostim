@@ -8,7 +8,7 @@ methods. It includes containers for storing photostimulation-specific device par
 (either 2D or 3D), and time series data related to photostimulation.
 </div>
 
-<br>We release six <a href="https://pynwb.readthedocs.io/en/stable/">PyNWB</a> containers as part of this extension:
+<br>We release six <a href="https://pynwb.readthedocs.io/en/stable/">PyNWB</a> containers as part of this extension (we currently only have a Python implementation, rather than both Python and a MATLAB ones):
 
 * The `SpatialLightModulator` and `Laser` containers store metadata about the spatial light modulator and laser used in the photostimulation, respectively. These containers are then stored within the `PhotostimulationMethod` parent container, which stores the remaining photostimulation method-specifici metadata.
 * `HolographicPattern` stores the **holographic pattern** used in stimulation.
@@ -166,6 +166,10 @@ sphinx-build -b html api_docs/source/ api_docs/build/
 from the home folder. Similar to the specification docs, API documentation is stored in `./api_docs/build`. Select 
 `./api_docs/build/index.html` to access the API documentation in a website format.
 
+
+## Credit
+
+Code by Carl Harris and Paul LaFosse (equal contribution). Collaboration between the NIMH's [Data Science and Sharing Team](https://cmn.nimh.nih.gov/dsst) and [Histed Lab](https://www.nimh.nih.gov/research/research-conducted-at-nimh/research-areas/clinics-and-labs/ncb).
 
 
 This extension was created using [ndx-template](https://github.com/nwb-extensions/ndx-template).

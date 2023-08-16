@@ -79,7 +79,7 @@ class PhotostimulationMethod(NWBContainer):
             {'name': 'stimulus_method', 'type': str,
              'doc': ("Scanning or scanless method for shaping optogenetic light "
                      "(ex., diffraction limited points,3D shot, disks, etc.)."),
-             'default': None},
+             'default': "point"},
             {'name': 'sweep_pattern', 'type': str,
              'doc': ("Sweeping pattern, if spatially modulated during stimulation (none, or other)."),
              'default': None},
@@ -205,9 +205,9 @@ class HolographicPattern(NWBContainer):
             if args_to_set['dimension'] is None:
                 args_to_set['dimension'] = mask_dim
 
-            if len(np.setdiff1d(np.unique(args_to_set['image_mask_roi']), np.array([0, 1]))) > 0:
-                if len(np.setdiff1d(np.unique(args_to_set['image_mask_roi']), np.array([0., 1.]))) > 0:
-                    raise ValueError("'image_mask_roi' data must be either 0 (off) or 1 (on).")
+#             if len(np.setdiff1d(np.unique(args_to_set['image_mask_roi']), np.array([0, 1]))) > 0:
+#                 if len(np.setdiff1d(np.unique(args_to_set['image_mask_roi']), np.array([0., 1.]))) > 0:
+#                     raise ValueError("'image_mask_roi' data must be either 0 (off) or 1 (on).")
 
         for key, val in args_to_set.items():
             setattr(self, key, val)
