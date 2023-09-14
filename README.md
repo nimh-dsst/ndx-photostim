@@ -8,7 +8,7 @@ methods. It includes containers for storing photostimulation-specific device par
 (either 2D or 3D), and time series data related to photostimulation.
 </div>
 
-<br>We release six <a href="https://pynwb.readthedocs.io/en/stable/">PyNWB</a> containers as part of this extension (we currently only have a Python implementation, rather than both Python and a MATLAB ones):
+<br>We release six <a href="https://pynwb.readthedocs.io/en/stable/">PyNWB</a> containers as part of this extension (we currently only have a Python implementation, rather than both Python and a MATLAB ones -- this is why the `matnwb` directory is empty):
 
 * The `SpatialLightModulator` and `Laser` containers store metadata about the spatial light modulator and laser used in the photostimulation, respectively. These containers are then stored within the `PhotostimulationMethod` parent container, which stores the remaining photostimulation method-specifici metadata.
 * `HolographicPattern` stores the **holographic pattern** used in stimulation.
@@ -138,7 +138,7 @@ if os.path.exists("example_file.nwb"):
 
 <a href="https://pynwb.readthedocs.io/en/stable/software_process.html#continuous-integration">Unit and integration
 tests</a> are implemented using <a href="https://docs.pytest.org/en/7.2.x/">pytest</a>, and can be run via the command 
-`pytest` from the root of the extension directory. In addition, the
+`pytest` from the root of the extension directory (i.e., inside `nwb-photostim/src`). In addition, the
 `pytest` command will also run a test of the example code above.
 
 ## Documentation
