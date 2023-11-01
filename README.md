@@ -18,7 +18,7 @@ methods. It includes containers for storing photostimulation-specific device par
 
 ## Background
 
-<img src="./docs/images/Cap1.PNG" width="225em" align="left" style=" margin:0.5em 0.5em 0.5em 0.5em;">
+<img src="https://github.com/histedlab/docs/images/Cap1.PNG" width="225em" align="left" style=" margin:0.5em 0.5em 0.5em 0.5em;">
 State-of-the-art <a href="https://www.nature.com/articles/s41467-017-01031-3">holographic photostimulation methods</a>, used in concert with <a href="https://www.nature.com/articles/nmeth818">two-photon imaging</a>, 
 allow unprecedented 
 control and measurement of cell activity in the living brain. Methods for managing data for two-photon imaging 
