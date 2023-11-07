@@ -1,7 +1,9 @@
 namespaces:
 - author:
+  - Paul LaFosse
   - Carl Harris
   contact:
+  - paul.lafosse@nih.gov
   - carlwharris1@gmail.com
   doc: holographic photostimulation extension to NWB standard
   name: ndx-photostim
